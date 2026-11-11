@@ -1,0 +1,34 @@
+# Fondi · Finanza personale
+
+Gestore completo delle finanze personali. È gratuito, funziona offline e i dati restano solo sul tuo computer.
+Apri `index.html` con il browser. Per un'anteprima con 6 mesi di dati di esempio, che non tocca i tuoi dati, apri `index.html?demo`.
+
+## File
+- `index.html`: struttura delle pagine
+- `app.css`: grafica (tema chiaro e scuro, versione per telefono)
+- `app.js`: tutta la logica
+
+## Funzioni
+| Area | Cosa fa |
+|---|---|
+| **Inserimento rapido** | Scrivi `12,50 pizza ieri #amici`: importo, data, tag e categoria vengono compilati da soli |
+| **Categorie automatiche** | Regole personali, apprendimento dai movimenti passati, dizionario di negozi italiani |
+| **Puoi spendere oggi** | Budget giornaliero calcolato su entrate previste, spese fisse in arrivo e obiettivi |
+| **Previsione del saldo** | Saldo dei prossimi 90 giorni con avviso se va sotto zero |
+| **Budget a base zero** | Tetti per categoria, "da assegnare", riporto del residuo al mese dopo, suggerimento automatico |
+| **Abbonamenti rilevati** | Trova i pagamenti che si ripetono e propone di aggiungerli ai ricorrenti |
+| **Piano debiti** | Confronto tra Valanga, Palla di neve e sole rate minime: data di fine, interessi, ordine di rimborso |
+| **Obiettivi** | Quanto mettere da parte ogni mese per arrivare in tempo |
+| **Import da banca** | Qualsiasi CSV: riconosce colonne, date e importi italiani, colonne Dare/Avere, duplicati |
+| **Report annuale** | Mese per mese, categorie, confronto con l'anno precedente |
+| **Consigli** | Budget sforati, categorie in crescita, fondo di emergenza, regola 50/30/20 |
+| **Conti** | Più conti, trasferimenti, patrimonio netto, correzione del saldo |
+| **Privacy** | Tasto per nascondere gli importi (P), nessun server |
+| **Annulla** | Ogni modifica importante si può annullare dalla notifica |
+
+## Scorciatoie
+`N` nuovo movimento · `/` cerca · `P` nascondi importi · `←` `→` cambia mese · `1`–`9` cambia pagina · `Shift+Invio` salva e aggiungi un altro
+
+## Dati
+Sono salvati nel `localStorage` del browser. Scarica un backup ogni tanto da **Impostazioni**.
+I dati delle versioni precedenti vengono importati in automatico.

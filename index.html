@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="it" data-theme="auto">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#6366f1">
+<title>Fondi · Finanza personale</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236366f1'/><stop offset='1' stop-color='%238b5cf6'/></linearGradient></defs><rect width='100' height='100' rx='28' fill='url(%23g)'/><text x='50' y='68' font-size='54' font-family='Segoe UI,sans-serif' font-weight='800' text-anchor='middle' fill='white'>€</text></svg>">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Fondi">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">€</div>
+      <div><b>Fondi</b><small>Finanza personale</small></div>
+    </div>
+    <nav id="nav"></nav>
+    <div class="side-foot">
+      <div class="side-card" id="sideCard"></div>
+      <button class="nav-item" id="btnInstalla" hidden></button>
+      <button class="nav-item" id="btnPrivacy" title="Nascondi importi (P)"></button>
+      <button class="nav-item" id="btnTema" title="Cambia tema"></button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div>
+        <h1 id="pageTitle">Panoramica</h1>
+        <p class="sub" id="pageSub"></p>
+      </div>
+      <div class="top-actions">
+        <div class="month-switch" id="monthSwitch">
+          <button id="mPrev" title="Mese precedente (←)"></button>
+          <button id="mLabel" title="Torna al mese corrente"></button>
+          <button id="mNext" title="Mese successivo (→)"></button>
+        </div>
+        <button class="btn primary" id="btnNuovo"><span id="icPlus"></span>Nuovo movimento <kbd>N</kbd></button>
+      </div>
+    </header>
+    <div class="banner" id="banner" hidden></div>
+
+    <main id="pages">
+      <!-- ============ PANORAMICA ============ -->
+      <section class="page" data-page="dashboard">
+        <div class="grid">
+          <div class="card hero span-5" id="hero"></div>
+          <div class="kpi-grid span-7" id="kpis"></div>
+
+          <div class="card span-8">
+            <div class="card-head">
+              <h2>Flusso di cassa · 12 mesi</h2>
+              <div class="legend"><span><i style="background:var(--pos)"></i>Entrate</span><span><i style="background:var(--neg)"></i>Spese</span><span><i style="background:var(--accent)"></i>Risparmiato</span></div>
+            </div>
+            <div id="chFlusso"></div>
+          </div>
+          <div class="card span-4">
+            <div class="card-head"><h2>Dove vanno i soldi</h2><button class="link" data-goto="budget">Budget →</button></div>
+            <div id="donut"></div>
+          </div>
+
+          <div class="card span-4">
+            <div class="card-head"><h2>Calendario delle spese</h2><span class="muted" id="calInfo"></span></div>
+            <div id="calendario"></div>
+          </div>
+          <div class="card span-4">
+            <div class="card-head"><h2>In arrivo · 30 giorni</h2><button class="link" data-goto="pianificazione">Tutti →</button></div>
+            <div id="inArrivo"></div>
+          </div>
+          <div class="card span-4">
+            <div class="card-head"><h2>Consigli per te</h2></div>
+            <ul class="insights" id="consigli"></ul>
+          </div>
+
+          <div class="card span-8">
+            <div class="card-head"><h2>Saldo previsto · prossimi 90 giorni</h2><button class="link" data-goto="pianificazione">Dettagli →</button></div>
+            <div id="chPrev"></div>
+          </div>
+          <div class="card span-4">
+            <div class="card-head"><h2>Regola 50/30/20</h2></div>
+            <p class="hint">Al massimo il 50% delle entrate per le necessità e il 30% per i desideri, almeno il 20% da parte.</p>
+            <div id="regola"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ MOVIMENTI ============ -->
+      <section class="page" data-page="movimenti" hidden>
+        <div class="card">
+          <div class="filters">
+            <div class="search"><span id="icSearch"></span><input id="q" placeholder="Cerca descrizione, categoria o #tag  (premi /)" autocomplete="off"></div>
+            <select id="qTipo">
+              <option value="">Tutti i tipi</option><option value="uscita">Uscite</option>
+              <option value="entrata">Entrate</option><option value="trasferimento">Trasferimenti</option>
+            </select>
+            <select id="qCat"></select>
+            <select id="qConto"></select>
+            <label class="switch"><input type="checkbox" id="qTutti"><span></span>Tutti i mesi</label>
+          </div>
+          <div class="chips" id="qChips"></div>
+          <div class="summary" id="qSumm"></div>
+          <div id="listaMov"></div>
+        </div>
+      </section>
+
+      <!-- ============ BUDGET ============ -->
+      <section class="page" data-page="budget" hidden>
+        <div class="grid">
+          <div class="stat-strip span-12" id="budgetTot"></div>
+          <div class="card span-12">
+            <div class="card-head">
+              <h2>Budget per categoria</h2>
+              <div class="btn-row">
+                <button class="btn sm" id="bSuggerisci">✨ Suggerisci dalle mie abitudini</button>
+                <button class="btn sm ghost" id="bAzzera">Azzera</button>
+              </div>
+            </div>
+            <p class="hint">Scrivi il tetto mensile a destra. Con <b>↻</b> il residuo (o lo sforamento) passa al mese successivo: utile per spese irregolari come regali, auto, vacanze.</p>
+            <div id="budgetLista"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ OBIETTIVI ============ -->
+      <section class="page" data-page="obiettivi" hidden>
+        <div class="goals" id="goals"></div>
+        <div class="card" style="margin-top:18px">
+          <div class="card-head"><h2>Nuovo obiettivo</h2></div>
+          <form id="fObj" class="form-grid">
+            <label>Icona<input id="oIcona" value="🎯" class="in-emoji"></label>
+            <label>Nome<input id="oNome" required placeholder="es. Vacanza, anticipo casa"></label>
+            <label>Cifra da raggiungere (€)<input type="number" id="oTarget" step="0.01" min="1" required></label>
+            <label>Già messo da parte (€)<input type="number" id="oAcc" step="0.01" min="0" value="0"></label>
+            <label>Scadenza (facoltativa)<input type="date" id="oScad"></label>
+            <button class="btn primary" type="submit">Crea obiettivo</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- ============ PIANIFICAZIONE ============ -->
+      <section class="page" data-page="pianificazione" hidden>
+        <div class="grid">
+          <div class="card span-12">
+            <div class="card-head"><h2>Saldo previsto nei prossimi 90 giorni</h2><span class="muted">conti correnti, risparmio e contanti</span></div>
+            <div class="stat-strip inner" id="prevStats"></div>
+            <div id="chPrev2"></div>
+            <p class="hint" id="prevNota" style="margin:12px 0 0"></p>
+          </div>
+          <div class="card span-7">
+            <div class="card-head"><h2>Movimenti ricorrenti</h2><span class="muted" id="ricTot"></span></div>
+            <div id="ricLista"></div>
+          </div>
+          <div class="card span-5">
+            <div class="card-head"><h2>Nuovo ricorrente</h2></div>
+            <p class="hint">Stipendio, affitto, bollette, abbonamenti, rate: si registrano da soli alla scadenza.</p>
+            <form id="fRic" class="form-grid">
+              <label>Tipo
+                <select id="rTipo"><option value="uscita">Uscita</option><option value="entrata">Entrata</option><option value="trasferimento">Trasferimento</option></select>
+              </label>
+              <label>Importo (€)<input type="number" id="rImporto" step="0.01" min="0.01" required></label>
+              <label class="span-all">Descrizione<input id="rDesc" required placeholder="es. Affitto"></label>
+              <label>Conto<select id="rConto"></select></label>
+              <label id="rlDest" hidden>Verso il conto<select id="rDest"></select></label>
+              <label id="rlCat">Categoria<select id="rCat"></select></label>
+              <label>Frequenza<select id="rFreq"><option value="mensile">Mensile</option><option value="settimanale">Settimanale</option><option value="annuale">Annuale</option></select></label>
+              <label>Prima scadenza<input type="date" id="rInizio" required></label>
+              <button class="btn primary span-all" type="submit">Aggiungi ricorrente</button>
+            </form>
+          </div>
+          <div class="card span-12">
+            <div class="card-head"><h2>✨ Abbonamenti rilevati</h2></div>
+            <p class="hint">Pagamenti che si ripetono ogni mese ma non hai ancora segnato come ricorrenti. Aggiungili per avere previsioni più precise.</p>
+            <div id="rilevati"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ DEBITI ============ -->
+      <section class="page" data-page="debiti" hidden>
+        <div class="grid">
+          <div class="stat-strip span-12" id="debStats"></div>
+          <div class="card span-7">
+            <div class="card-head"><h2>I tuoi debiti</h2><span class="muted">aggiorna il residuo quando vuoi</span></div>
+            <div id="debLista"></div>
+          </div>
+          <div class="card span-5">
+            <div class="card-head"><h2>Aggiungi debito</h2></div>
+            <form id="fDeb" class="form-grid">
+              <label class="span-all">Nome<input id="dNome" required placeholder="es. Prestito auto, carta revolving"></label>
+              <label>Debito residuo (€)<input type="number" id="dSaldo" step="0.01" min="1" required></label>
+              <label>Tasso annuo TAN (%)<input type="number" id="dTasso" step="0.01" min="0" value="0"></label>
+              <label>Rata minima mensile (€)<input type="number" id="dRata" step="0.01" min="1" required></label>
+              <button class="btn primary" type="submit">Aggiungi</button>
+            </form>
+          </div>
+          <div class="card span-12">
+            <div class="card-head">
+              <h2>Piano di rimborso</h2>
+              <label class="inline">Posso aggiungere ogni mese € <input type="number" id="dExtra" min="0" step="10" class="in-sm"></label>
+            </div>
+            <div id="debPiano"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ REPORT ============ -->
+      <section class="page" data-page="report" hidden>
+        <div class="grid">
+          <div class="span-12" style="display:flex;justify-content:flex-start">
+            <div class="month-switch"><button id="yPrev"></button><button id="yLabel" style="min-width:90px"></button><button id="yNext"></button></div>
+          </div>
+          <div class="stat-strip span-12" id="repStats"></div>
+          <div class="card span-12">
+            <div class="card-head"><h2>Mese per mese</h2>
+              <div class="legend"><span><i style="background:var(--pos)"></i>Entrate</span><span><i style="background:var(--neg)"></i>Spese</span><span><i style="background:var(--accent)"></i>Risparmiato</span></div>
+            </div>
+            <div id="repChart"></div>
+          </div>
+          <div class="card span-7"><div class="card-head"><h2>Riepilogo mensile</h2></div><div class="table-wrap"><table id="repTab"></table></div></div>
+          <div class="card span-5"><div class="card-head"><h2>Categorie dell'anno</h2></div><div id="repCat"></div></div>
+        </div>
+      </section>
+
+      <!-- ============ CONTI ============ -->
+      <section class="page" data-page="conti" hidden>
+        <div class="grid">
+          <div class="stat-strip span-12" id="contiStats"></div>
+          <div class="span-8"><div class="acc-grid" id="contiLista"></div></div>
+          <div class="card span-4" style="align-self:start">
+            <div class="card-head"><h2>Nuovo conto</h2></div>
+            <form id="fConto" class="form-grid">
+              <label class="span-all">Nome<input id="kNome" required placeholder="es. Conto banca, Contanti"></label>
+              <label>Tipo<select id="kTipo"></select></label>
+              <label>Saldo attuale (€)<input type="number" id="kSaldo" step="0.01" value="0"></label>
+              <button class="btn primary span-all" type="submit">Aggiungi conto</button>
+            </form>
+            <p class="hint" style="margin:14px 0 0">Per le carte di credito inserisci il debito con il segno meno. Se un saldo non torna, scrivi quello reale nella card del conto e lo correggo.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ IMPOSTAZIONI ============ -->
+      <section class="page" data-page="impostazioni" hidden>
+        <div class="grid">
+          <div class="card span-12">
+            <div class="card-head"><h2>📥 Importa l'estratto conto (CSV)</h2></div>
+            <p class="hint">Scarica i movimenti in CSV dall'home banking e trascina qui il file. Riconosco colonne, date e importi in formato italiano, assegno le categorie e salto i duplicati.</p>
+            <label class="drop" id="drop"><input type="file" id="impFile" accept=".csv,.txt" hidden><div><span id="icUpload"></span><b>Trascina qui il file CSV</b><span class="small">oppure clicca per sceglierlo</span></div></label>
+            <div id="impMap"></div>
+          </div>
+
+          <div class="card span-6">
+            <div class="card-head"><h2>Regole automatiche</h2></div>
+            <p class="hint">Se la descrizione contiene questa parola, uso questa categoria. Imparo anche dai movimenti che hai già categorizzato.</p>
+            <form id="fRegola" class="inline-form">
+              <input id="gParola" required placeholder="es. esselunga">
+              <select id="gCat"></select>
+              <button class="btn primary" type="submit">Aggiungi</button>
+            </form>
+            <div id="regoleLista"></div>
+            <button class="btn sm ghost" id="gApplica" style="margin-top:8px">Applica le regole ai movimenti esistenti</button>
+          </div>
+
+          <div class="card span-6">
+            <div class="card-head"><h2>Categorie</h2></div>
+            <div id="catLista"></div>
+            <form id="fCatNew" class="inline-form" style="margin-top:14px">
+              <input id="cIcona" value="🏷️" class="in-emoji" aria-label="Icona">
+              <input id="cNome" required placeholder="Nuova categoria">
+              <select id="cGruppo">
+                <option value="necessita">Necessità</option><option value="desideri">Desideri</option>
+                <option value="risparmio">Risparmio</option><option value="entrata">Entrata</option>
+              </select>
+              <button class="btn primary" type="submit">Aggiungi</button>
+            </form>
+          </div>
+
+          <div class="card span-4">
+            <div class="card-head"><h2>Backup</h2></div>
+            <p class="hint">I dati vivono solo in questo browser. Scarica un backup ogni tanto.</p>
+            <div class="btn-row">
+              <button class="btn primary" id="bkScarica">Scarica backup</button>
+              <button class="btn" id="bkCarica">Ripristina</button>
+              <button class="btn ghost" id="csvScarica">Esporta CSV</button>
+              <input type="file" id="bkFile" accept=".json" hidden>
+            </div>
+          </div>
+          <div class="card span-12" id="cardInstalla">
+            <div class="card-head"><h2>📱 Installa sul telefono</h2><button class="btn primary sm" id="btnInstalla2" hidden>Installa ora</button></div>
+            <div id="installaInfo"></div>
+          </div>
+          <div class="card span-4">
+            <div class="card-head"><h2>Aspetto</h2></div>
+            <div class="seg" id="temaSeg"><button data-v="auto">Automatico</button><button data-v="light">Chiaro</button><button data-v="dark">Scuro</button></div>
+            <p class="hint" style="margin:14px 0 0">🔒 Nessun dato lascia il tuo computer: niente server, niente account, niente tracciamento.</p>
+          </div>
+          <div class="card span-4">
+            <div class="card-head"><h2>Scorciatoie da tastiera</h2></div>
+            <ul class="keys">
+              <li>Nuovo movimento <kbd>N</kbd></li>
+              <li>Cerca nei movimenti <kbd>/</kbd></li>
+              <li>Nascondi importi <kbd>P</kbd></li>
+              <li>Mese precedente / successivo <span><kbd>←</kbd> <kbd>→</kbd></span></li>
+              <li>Cambia pagina <kbd>1</kbd>–<kbd>9</kbd></li>
+              <li>Salva e aggiungi un altro <kbd>Shift + Invio</kbd></li>
+            </ul>
+          </div>
+          <div class="card span-12 danger-zone">
+            <div><h2>Dati</h2><p class="hint">Prova l'app con 6 mesi di dati di esempio, oppure cancella tutto e riparti da zero.</p></div>
+            <div class="btn-row">
+              <button class="btn" id="bDemo">Carica dati di esempio</button>
+              <button class="btn danger" id="reset">Cancella tutti i dati</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<button class="fab" id="fab" title="Nuovo movimento"></button>
+
+<!-- ============ MODAL MOVIMENTO ============ -->
+<div class="overlay" id="modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitolo">
+    <div class="modal-head">
+      <h2 id="mTitolo">Nuovo movimento</h2>
+      <button class="icon-btn" id="mChiudi" title="Chiudi (Esc)"></button>
+    </div>
+    <div class="quick">
+      <span>✨</span>
+      <input id="mQuick" placeholder="Scrivi: 12,50 pizza ieri #amici" autocomplete="off">
+    </div>
+    <div class="quick-hint">Scrivi importo, descrizione, data (<i>oggi</i>, <i>ieri</i>, <i>12/11</i>) e #tag: il resto lo compilo io. Metti <b>+</b> davanti per un'entrata.</div>
+    <div class="center"><div class="seg" id="mTipo"><button data-v="uscita">Uscita</button><button data-v="entrata">Entrata</button><button data-v="trasferimento">Trasferimento</button></div></div>
+    <div class="amount-row"><span>€</span><input id="mImporto" type="number" step="0.01" min="0.01" placeholder="0,00" inputmode="decimal"></div>
+    <div class="form-grid">
+      <label>Descrizione<input id="mDesc" autocomplete="off"></label>
+      <label>Data<input type="date" id="mData"></label>
+      <label>Conto<select id="mConto"></select></label>
+      <label id="mlDest" hidden>Verso il conto<select id="mDest"></select></label>
+      <label>Tag<input id="mTags" placeholder="#vacanza #lavoro" autocomplete="off"></label>
+    </div>
+    <div id="mlCat">
+      <div class="lbl">Categoria <span class="faint" id="mCatAuto"></span></div>
+      <div class="cat-grid" id="mCat"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost danger-text" id="mElimina" hidden>Elimina</button>
+      <span class="flex"></span>
+      <button class="btn ghost" id="mAltro">Salva e aggiungi altro</button>
+      <button class="btn primary" id="mSalva">Salva <kbd>Invio</kbd></button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="app.js"></script>
+</body>
+</html>
