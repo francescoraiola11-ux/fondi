@@ -93,11 +93,13 @@ const PAGES = [
   ["movimenti", "Movimenti", "list", "Tutte le entrate, le uscite e i trasferimenti"],
   ["budget", "Budget", "pie", "Dai un compito a ogni euro"],
   ["obiettivi", "Obiettivi", "target", "I tuoi traguardi di risparmio"],
+  ["futuro", "Il tuo futuro", "trend", "Simula i prossimi 40 anni e scopri quando sarai libero"],
   ["pianificazione", "Pianificazione", "calendar", "Ricorrenti, abbonamenti e previsione del saldo"],
   ["debiti", "Debiti", "card", "Il piano più rapido ed economico per azzerarli"],
   ["report", "Report", "chart", "Il tuo anno in numeri"],
   ["conti", "Conti", "wallet", "Saldi e patrimonio netto"],
   ["impostazioni", "Impostazioni", "gear", "Importazione, regole, categorie e backup"],
+  ["pro", "Fondi Pro", "spark", "Tutto il potenziale di Fondi"],
 ];
 const GRUPPI = { necessita: "Necessità", desideri: "Desideri", risparmio: "Risparmio e investimenti", entrata: "Entrate" };
 const TIPI_CONTO = { "Conto corrente": "🏦", "Risparmio": "🐷", "Contanti": "💵", "Investimenti": "📈", "Carta di credito": "💳" };
@@ -772,12 +774,12 @@ function renderShell() {
   const r = riepilogo(MESE_CORR);
   const sforati = S.categorie.filter(c => c.budget > 0 && (r.perCat[c.nome] || 0) > disponibileCat(c, MESE_CORR)).length;
   const badge = { budget: sforati ? [sforati, ""] : null, pianificazione: rilevaAbbonamenti().length ? [rilevaAbbonamenti().length, "soft"] : null };
-  $("nav").innerHTML = PAGES.map(([id, nome, ic], i) => `<button class="nav-item${pagina === id ? " active" : ""}" data-goto="${id}" title="${nome} (${i + 1})">${icon(ic, 19)}<span>${nome}</span>${badge[id] ? `<span class="badge ${badge[id][1]}">${badge[id][0]}</span>` : ""}</button>`).join("");
+  $("nav").innerHTML = PAGES.map(([id, nome, ic], i) => `<button class="nav-item${pagina === id ? " active" : ""}${id === "pro" ? " pro-nav" : ""}" data-goto="${id}" title="${nome}${i < 9 ? ` (${i + 1})` : ""}">${icon(ic, 19)}<span>${nome}</span>${id === "futuro" && !isPro() ? '<span class="pro-badge">PRO</span>' : ""}${badge[id] ? `<span class="badge ${badge[id][1]}">${badge[id][0]}</span>` : ""}</button>`).join("");
   $("btnPrivacy").innerHTML = `${icon(S.impostazioni.privacy ? "eyeOff" : "eye", 19)}<span>${S.impostazioni.privacy ? "Mostra importi" : "Nascondi importi"}</span>`;
   const t = S.impostazioni.tema;
   $("btnTema").innerHTML = `${icon(t === "dark" ? "moon" : t === "light" ? "sun" : "auto", 19)}<span>Tema: ${t === "dark" ? "scuro" : t === "light" ? "chiaro" : "automatico"}</span>`;
   const pn = patrimonio();
-  $("sideCard").innerHTML = `<b class="money">${euro(pn)}</b>patrimonio netto · ${S.conti.length} ${S.conti.length === 1 ? "conto" : "conti"}<div id="syncSide" style="margin-top:6px"></div>`;
+  $("sideCard").innerHTML = `<b class="money">${euro(pn)}</b>patrimonio netto · ${S.conti.length} ${S.conti.length === 1 ? "conto" : "conti"}<div id="syncSide" style="margin-top:6px"></div><div style="margin-top:6px">${licenzaAttiva() ? '<span class="pro-badge">✦ PRO</span>' : provaAttiva() ? `<a class="link" data-goto="pro">✦ Prova Pro: ${giorniProva()} ${giorniProva() === 1 ? "giorno" : "giorni"}</a>` : DEMO ? "" : '<a class="link" data-goto="pro">✦ Passa a Pro</a>'}</div>`;
   aggiornaSyncUI();
   const p = PAGES.find(p => p[0] === pagina);
   $("pageTitle").textContent = p[1];
@@ -815,6 +817,9 @@ function renderDashboard() {
       <div class="hero-bar"><div style="width:${r.entrate ? Math.min(100, (r.spese / r.entrate) * 100) : 0}%"></div></div>
       <div class="hero-foot"><span>Entrate <b class="money">${euro(r.entrate)}</b></span><span>Spese <b class="money">${euro(r.spese)}</b></span></div>`;
   }
+
+  const wrM = ym === MESE_CORR ? shiftMese(ym, -1) : ym;
+  if (riepilogo(wrM).n >= 5) h.insertAdjacentHTML("beforeend", `<button class="hero-wr" data-act="wrapped" data-periodo="mese" data-m="${wrM}">🎁 ${wrM === ym ? "Il tuo mese" : "Il tuo " + nomeMese(wrM, 1).split(" ")[0]}</button>`);
 
   // KPI
   const mesi6 = [...Array(6)].map((_, i) => shiftMese(ym, i - 5));
@@ -872,6 +877,7 @@ function renderDashboard() {
 
   // Previsione
   $("chPrev").innerHTML = graficoPrevisione(previsione(90), "gPrevD", 190);
+  lock("chPrev", "previsione");
 
   // 50/30/20 (nel mese corrente considera anche le entrate ricorrenti in arrivo)
   const ea = entrateAttese(ym), E = ea.tot;
@@ -1049,6 +1055,7 @@ function renderPianificazione() {
   $("prevStats").innerHTML = stat("Oggi", euro(p.iniziale)) + stat("Fra 30 giorni", euro(val(30)), val(30) < 0 ? "neg" : "") + stat("Fra 60 giorni", euro(val(60)), val(60) < 0 ? "neg" : "") + stat("Fra 90 giorni", euro(val(90)), val(90) < 0 ? "neg" : "") +
     stat("Punto più basso", euro(p.min.v), p.min.v < 0 ? "neg" : "", fmtData(p.min.d));
   $("chPrev2").innerHTML = graficoPrevisione(p, "gPrevP", 230);
+  lock("chPrev2", "previsione");
   $("prevNota").innerHTML = `La previsione considera i ricorrenti programmati e una spesa variabile media di <b class="money">${euro(p.vg)}</b> al giorno, calcolata sugli ultimi 90 giorni.`;
 
   const usc = somma(S.ricorrenti.filter(r => r.tipo === "uscita").map(equivalenteMensile));
@@ -1070,6 +1077,7 @@ function renderPianificazione() {
       <div class="tx-amt">${money(a.importo)}<span class="muted small">/mese</span></div>
       <div class="btn-row"><button class="btn sm primary" data-act="addAbb" data-k="${esc(a.k)}">Aggiungi</button><button class="btn sm ghost" data-act="ignAbb" data-k="${esc(a.k)}">Ignora</button></div></div>`;
   }).join("") : `<div class="empty">Nessun nuovo abbonamento rilevato. 👍</div>`;
+  lock("rilevati", "abbonamenti");
 }
 
 /* ---------------- Render: debiti ---------------- */
@@ -1087,6 +1095,7 @@ function renderDebiti() {
       <input type="number" class="deb-in" step="0.01" min="0" value="${d.saldo}" data-deb="${d.id}" title="Debito residuo">
       <button class="icon-btn del" data-act="delDeb" data-id="${d.id}" title="Elimina">${icon("trash", 16)}</button></div>`).join("")
     : `<div class="empty"><span class="big-emoji">🎉</span>Nessun debito registrato.</div>`;
+  lock("debPiano", "debiti");
   if (!ds.length) { $("debPiano").innerHTML = `<p class="hint" style="margin:0">Aggiungi prestiti, finanziamenti o carte revolving: confronto le strategie e ti dico in quale ordine rimborsarli e quanto risparmi.</p>`; return; }
   const strat = [
     ["valanga", "🏔️ Valanga", "Prima il tasso più alto: paghi meno interessi in totale."],
@@ -1128,6 +1137,7 @@ function renderReport() {
       <div><div class="brow-top"><b>${esc(c)}</b><span class="num">${money(v)} <span class="faint small">· ${money(v / nMesi)}/mese</span></span></div>
       <div class="progress"><div style="width:${(v / max) * 100}%;background:${ci.colore}"></div></div></div></div>`;
   }).join("") : `<div class="empty">Nessuna spesa nel ${y}.</div>`;
+  lock("repTab", "report"); lock("repCat", "report");
 }
 
 /* ---------------- Render: conti ---------------- */
@@ -1152,6 +1162,7 @@ function renderConti() {
 
 /* ---------------- Render: impostazioni ---------------- */
 function renderImpostazioni() {
+  lock("drop", "import"); lock("syncBox", "sync");
   $("regoleLista").innerHTML = S.regole.length ? S.regole.map((r, i) => `<div class="rule-chip"><span class="flex">“${esc(r.parola)}” → ${catInfo(r.categoria).icona} <b>${esc(r.categoria)}</b></span><button class="icon-btn del" data-act="delRegola" data-i="${i}">${icon("x", 15)}</button></div>`).join("") : `<p class="hint" style="margin:0">Nessuna regola personalizzata.</p>`;
   $("catLista").innerHTML = S.categorie.map(c => `<div class="cat-edit">
     <input class="in-emoji" value="${esc(c.icona)}" data-cat-ed="icona" data-cat="${esc(c.nome)}">
@@ -1246,7 +1257,7 @@ function renderImport() {
 }
 
 /* ---------------- Render principale ---------------- */
-const RENDER = { dashboard: renderDashboard, movimenti: renderMovimenti, budget: renderBudget, obiettivi: renderObiettivi, pianificazione: renderPianificazione, debiti: renderDebiti, report: renderReport, conti: renderConti, impostazioni: renderImpostazioni };
+const RENDER = { futuro: renderFuturo, pro: renderPro, dashboard: renderDashboard, movimenti: renderMovimenti, budget: renderBudget, obiettivi: renderObiettivi, pianificazione: renderPianificazione, debiti: renderDebiti, report: renderReport, conti: renderConti, impostazioni: renderImpostazioni };
 function aggiornaSelect() {
   const keep = (id, html) => { const el = $(id); if (!el) return; const v = el.value; el.innerHTML = html; if ([...el.options].some(o => o.value === v)) el.value = v; };
   const conti = S.conti.map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join("");
@@ -1448,6 +1459,7 @@ function bind() {
   $("icPlus").innerHTML = icon("plus", 17); $("fab").innerHTML = icon("plus", 26);
   $("icSearch").innerHTML = icon("search", 17); $("icUpload").innerHTML = icon("upload", 28);
   $("mChiudi").innerHTML = icon("x", 18);
+  document.querySelector(".pw-close").innerHTML = icon("x", 18); document.querySelector(".wr-close").innerHTML = icon("x", 22);
   $("kTipo").innerHTML = Object.entries(TIPI_CONTO).map(([t, e]) => `<option value="${t}">${e} ${t}</option>`).join("");
   $("rInizio").value = OGGI;
 
@@ -1486,6 +1498,7 @@ function bind() {
   // Form
   $("fObj").onsubmit = e => {
     e.preventDefault();
+    if (!isPro() && S.obiettivi.length >= PRO.limiteObiettivi) return apriPaywall("obiettivi");
     S.obiettivi.push({ id: uid(), nome: $("oNome").value.trim(), icona: $("oIcona").value.trim() || "🎯", target: arrot(+$("oTarget").value), accumulato: arrot(+$("oAcc").value || 0), scadenza: $("oScad").value || null });
     e.target.reset(); $("oIcona").value = "🎯"; $("oAcc").value = 0; salva(); render(); toast("Obiettivo creato");
   };
@@ -1513,6 +1526,7 @@ function bind() {
   $("dExtra").addEventListener("input", () => { S.impostazioni.extraDebiti = Math.max(0, +$("dExtra").value || 0); salva(); renderDebiti(); });
   $("fConto").onsubmit = e => {
     e.preventDefault();
+    if (!isPro() && S.conti.length >= PRO.limiteConti) return apriPaywall("conti");
     S.conti.push({ id: uid(), nome: $("kNome").value.trim(), tipo: $("kTipo").value, saldoIniziale: arrot(+$("kSaldo").value || 0) });
     $("kNome").value = ""; $("kSaldo").value = 0; salva(); render(); toast("Conto aggiunto");
   };
@@ -1593,7 +1607,7 @@ function bind() {
       case "giorno": filtroGiorno = b.dataset.d; $("q").value = ""; return vaiA("movimenti");
       case "mese": meseSel = b.dataset.m; if (pagina === "report") pagina = "dashboard"; return render();
       case "altri": limiteLista += 250; return renderMovimenti();
-      case "rollover": { const c = S.categorie.find(c => c.nome === b.dataset.cat); if (c) { c.rollover = !c.rollover; salva(); render(); toast(c.rollover ? `Riporto attivo per ${c.nome}` : `Riporto disattivato per ${c.nome}`); } return; }
+      case "rollover": if (!richiediPro("rollover")) return; { const c = S.categorie.find(c => c.nome === b.dataset.cat); if (c) { c.rollover = !c.rollover; salva(); render(); toast(c.rollover ? `Riporto attivo per ${c.nome}` : `Riporto disattivato per ${c.nome}`); } return; }
       case "delCat": {
         snapshot(); S.categorie = S.categorie.filter(c => c.nome !== b.dataset.cat); S.regole = S.regole.filter(r => r.categoria !== b.dataset.cat);
         salva(); render(); return toast("Categoria eliminata: i movimenti restano", true);
@@ -1627,7 +1641,24 @@ function bind() {
         return toast(`Saldo di ${c.nome} corretto (${diff >= 0 ? "+" : ""}${euro(diff)})`, true);
       }
       case "delRegola": S.regole.splice(+b.dataset.i, 1); salva(); return render();
-      case "syncOra": return sincronizza(true);
+      case "syncOra": if (!richiediPro("sync")) return; return sincronizza(true);
+      case "paywall": chiudiWrapped(); return apriPaywall(b.dataset.f);
+      case "chiudiPaywall": return chiudiPaywall();
+      case "pwPiano": pwPiano = b.dataset.p; return renderPaywall();
+      case "pwProva": return iniziaProva();
+      case "pwCompra": return compraPro();
+      case "pwAttiva": return attivaLicenza($("pwKey").value);
+      case "proAttiva": return attivaLicenza($("proKey").value);
+      case "proRimuovi": LIC = { provaInizio: LIC.provaInizio }; salvaLic(); render(); return toast("Licenza rimossa da questo dispositivo");
+      case "wrapped": return apriWrapped(b.dataset.periodo, b.dataset.m);
+      case "chiudiWrapped": return chiudiWrapped();
+      case "wrPrev": return cambiaSlide(-1);
+      case "wrNext": return cambiaSlide(1);
+      case "wrCondividi": return condividiWrapped();
+      case "pdf": if (!richiediPro("report")) return; return stampaReport(b.dataset.periodo);
+      case "futReset": FUT = null; FUT = futDefault(); $("futInput").dataset.ok = ""; salvaFut(); return renderFuturo();
+      case "futAdd": FUT.eventi.push({ ...PRESET[+b.dataset.i] }); salvaFut(); return renderFuturo();
+      case "futDel": FUT.eventi.splice(+b.dataset.i, 1); salvaFut(); return renderFuturo();
       case "syncScollega": return scollegaSync();
       case "impAnnulla": IMP = null; return renderImport();
       case "impConferma": {
@@ -1639,7 +1670,7 @@ function bind() {
   });
 
   // Import file
-  const leggi = f => { if (!f) return; const rd = new FileReader(); rd.onload = () => caricaImport(String(rd.result), f.name); rd.readAsText(f); };
+  const leggi = f => { if (!f || !richiediPro("import")) return; const rd = new FileReader(); rd.onload = () => caricaImport(String(rd.result), f.name); rd.readAsText(f); };
   $("impFile").onchange = e => { leggi(e.target.files[0]); e.target.value = ""; };
   const drop = $("drop");
   ["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
@@ -1672,8 +1703,27 @@ function bind() {
     snapshot(); S = statoIniziale(); salva(); render(); toast("Tutti i dati sono stati cancellati", true);
   };
 
+  // Simulatore
+  document.addEventListener("input", e => {
+    const t = e.target;
+    if (t.dataset.fut) {
+      const k = t.dataset.fut, sl = SLIDER.find(x => x[0] === k);
+      FUT[k] = +t.value; $("sv-" + k).textContent = sl[5](FUT[k]); salvaFut(); calcolaFuturo();
+    } else if (t.dataset.ev) {
+      const ev = FUT.eventi[+t.dataset.ev]; if (!ev) return;
+      ev[t.dataset.k] = t.dataset.k === "nome" ? t.value : Math.max(t.dataset.k === "mensile" ? -1e7 : 0, +t.value || 0);
+      salvaFut(); calcolaFuturo();
+    }
+  });
+  $("paywall").addEventListener("mousedown", e => { if (e.target === $("paywall")) chiudiPaywall(); });
+
   // Tastiera
   document.addEventListener("keydown", e => {
+    if (!$("wrapped").hidden) {
+      if (e.key === "Escape") chiudiWrapped(); else if (e.key === "ArrowRight" || e.key === " ") { e.preventDefault(); cambiaSlide(1); } else if (e.key === "ArrowLeft") cambiaSlide(-1);
+      return;
+    }
+    if (!$("paywall").hidden) { if (e.key === "Escape") chiudiPaywall(); return; }
     const el = document.activeElement, inField = el && /^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName);
     if (!$("modal").hidden) {
       if (e.key === "Escape") chiudiModal();
@@ -1700,6 +1750,425 @@ function caricaDemo() {
   S.impostazioni.tema = tema;
   salva(); vaiA("dashboard");
   toast("Dati di esempio caricati", true);
+}
+
+/* =====================================================================
+   FONDI PRO · abbonamento, prova gratuita, sblocco funzioni
+   Pagamenti tramite Gumroad o Lemon Squeezy (merchant of record: incassano e gestiscono l'IVA).
+   La licenza viene verificata direttamente dal browser: nessun server necessario.
+   ===================================================================== */
+const PRO = {
+  provider: "gumroad",          // "gumroad" oppure "lemonsqueezy"
+  gumroadProductId: "",         // Gumroad → prodotto → Content → License key → product_id
+  lemonProductId: "",           // facoltativo: ID prodotto Lemon Squeezy (controllo extra)
+  checkoutMensile: "",          // link di acquisto del piano mensile
+  checkoutAnnuale: "",          // link di acquisto del piano annuale
+  gestisci: "https://app.gumroad.com/library",
+  prezzoMensile: 3.99, prezzoAnnuale: 29.99, giorniProva: 7,
+  limiteConti: 3, limiteObiettivi: 2,
+};
+const PRO_KEY = "fondi-pro", GIORNO = 864e5;
+const PARAMS = new URLSearchParams(location.search);
+let LIC = {};
+try { LIC = JSON.parse(localStorage.getItem(PRO_KEY) || "{}"); } catch (e) { }
+const salvaLic = () => { if (!DEMO) localStorage.setItem(PRO_KEY, JSON.stringify(LIC)); };
+const provaAttiva = () => !!LIC.provaInizio && Date.now() - LIC.provaInizio < PRO.giorniProva * GIORNO;
+const giorniProva = () => Math.max(0, Math.ceil((LIC.provaInizio + PRO.giorniProva * GIORNO - Date.now()) / GIORNO));
+const licenzaAttiva = () => !!(LIC.key && LIC.ok && Date.now() - (LIC.verificata || 0) < 14 * GIORNO && (!LIC.scade || LIC.scade > Date.now()));
+const isPro = () => (DEMO ? !PARAMS.has("free") : licenzaAttiva() || provaAttiva());
+const e0 = n => Math.round(n).toLocaleString("it-IT") + " €";
+const fmtEuro0 = n => n.toLocaleString("it-IT", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
+
+const FEATURE = {
+  futuro: ["🔮", "Il tuo futuro", "Simula 10–40 anni: mutuo, auto, figli. Scopri quando sarai libero finanziariamente."],
+  previsione: ["📈", "Saldo previsto a 90 giorni", "Scopri in anticipo, giorno per giorno, quando il conto andrà in rosso."],
+  wrapped: ["🎁", "Il tuo anno in Fondi", "Il riepilogo a storie animate di mese e anno, da condividere."],
+  abbonamenti: ["🕵️", "Caccia agli abbonamenti", "Fondi trova da solo i pagamenti ricorrenti che ti stai dimenticando."],
+  debiti: ["🏔️", "Piano anti-debiti", "La strategia che ti fa pagare meno interessi e finire prima."],
+  import: ["📥", "Import dalla banca", "Carica l'estratto conto CSV: categorie e doppioni gestiti in automatico."],
+  sync: ["☁️", "Sincronizzazione cifrata", "PC e telefono sempre allineati, con dati cifrati end-to-end."],
+  report: ["📄", "Report annuali e PDF", "Il tuo anno mese per mese e report professionali da stampare."],
+  rollover: ["↻", "Budget con riporto", "Il budget non speso passa al mese dopo: perfetto per regali, auto, vacanze."],
+  conti: ["♾️", "Conti illimitati", `Con il piano gratuito puoi avere fino a ${PRO.limiteConti} conti.`],
+  obiettivi: ["♾️", "Obiettivi illimitati", `Con il piano gratuito puoi avere fino a ${PRO.limiteObiettivi} obiettivi.`],
+};
+const VETRINA = ["futuro", "previsione", "wrapped", "abbonamenti", "debiti", "import", "sync", "report", "rollover"];
+
+/* --- licenza --- */
+async function verificaLicenza(key) {
+  if (PRO.provider === "lemonsqueezy") {
+    const r = await fetch("https://api.lemonsqueezy.com/v1/licenses/validate", { method: "POST", headers: { Accept: "application/json" }, body: new URLSearchParams({ license_key: key }) });
+    const j = await r.json();
+    if (!j.valid || !j.license_key) return { ok: false, motivo: "Chiave di licenza non valida" };
+    if (j.license_key.status !== "active") return { ok: false, motivo: j.license_key.status === "expired" ? "Abbonamento scaduto" : "Licenza non attiva" };
+    if (PRO.lemonProductId && String(j.meta && j.meta.product_id) !== String(PRO.lemonProductId)) return { ok: false, motivo: "Questa chiave è di un altro prodotto" };
+    return { ok: true, email: j.meta && j.meta.customer_email };
+  }
+  const r = await fetch("https://api.gumroad.com/v2/licenses/verify", { method: "POST", body: new URLSearchParams({ product_id: PRO.gumroadProductId, license_key: key, increment_uses_count: "false" }) });
+  const j = await r.json();
+  if (!j.success) return { ok: false, motivo: /disabled/i.test(j.message || "") ? "Licenza disattivata" : "Chiave di licenza non valida" };
+  const p = j.purchase || {};
+  if (p.refunded || p.chargebacked || p.disputed) return { ok: false, motivo: "Acquisto rimborsato o contestato" };
+  const fine = [p.subscription_cancelled_at, p.subscription_failed_at, p.subscription_ended_at].filter(Boolean).map(d => new Date(d).getTime()).sort((a, b) => a - b)[0];
+  if (fine && fine <= Date.now()) return { ok: false, motivo: "L'abbonamento è terminato" };
+  return { ok: true, email: p.email, scade: fine || null };
+}
+async function attivaLicenza(key) {
+  key = (key || "").trim();
+  if (!key) return toast("Incolla la chiave di licenza ricevuta via email");
+  if (PRO.provider === "gumroad" && !PRO.gumroadProductId) return toast("I pagamenti non sono ancora attivi: intanto usa la prova gratuita");
+  try {
+    const r = await verificaLicenza(key);
+    if (!r.ok) return toast(r.motivo);
+    LIC = { ...LIC, key, ok: true, verificata: Date.now(), email: r.email || "", scade: r.scade || null, motivo: null };
+    salvaLic(); chiudiPaywall(); render(); festeggia();
+    toast("Benvenuto in Fondi Pro ✦");
+  } catch (e) { toast("Non riesco a verificare la licenza: controlla la connessione"); }
+}
+async function ricontrollaLicenza() {
+  if (!LIC.key || !navigator.onLine || Date.now() - (LIC.verificata || 0) < 3 * GIORNO) return;
+  try {
+    const r = await verificaLicenza(LIC.key);
+    if (r.ok) Object.assign(LIC, { ok: true, verificata: Date.now(), scade: r.scade || null, motivo: null });
+    else Object.assign(LIC, { ok: false, motivo: r.motivo });
+    salvaLic(); render();
+  } catch (e) { /* offline: resta valida fino a 14 giorni dall'ultima verifica */ }
+}
+function iniziaProva() {
+  if (LIC.provaInizio) return toast("Hai già usato la prova gratuita");
+  LIC.provaInizio = Date.now(); salvaLic(); chiudiPaywall(); render(); festeggia();
+  toast(`Fondi Pro attivo per ${PRO.giorniProva} giorni ✦`);
+}
+
+/* --- paywall --- */
+let pwPiano = "annuale", pwFocus = null;
+function richiediPro(f) { if (isPro()) return true; apriPaywall(f); return false; }
+function apriPaywall(f) { pwFocus = f || null; renderPaywall(); $("paywall").hidden = false; }
+function chiudiPaywall() { $("paywall").hidden = true; }
+function renderPaywall() {
+  const m = PRO.prezzoMensile, a = PRO.prezzoAnnuale, risp = Math.round((1 - a / (m * 12)) * 100);
+  const puoProvare = !LIC.provaInizio, finita = LIC.provaInizio && !provaAttiva() && !licenzaAttiva();
+  const f = pwFocus && FEATURE[pwFocus];
+  $("pwBody").innerHTML = `
+    <div class="pw-head"><span class="pro-badge">✦ FONDI PRO</span>
+      <h2>${finita ? "La tua prova è finita.<br>Non tornare indietro." : "Smetti di contare i soldi.<br>Inizia a guidarli."}</h2>
+      <p>Fondi ti mostra il passato. Fondi Pro ti mostra il <b>futuro</b>.</p>
+      ${f ? `<div class="pw-focus"><span style="font-size:22px">${f[0]}</span><span><b>${f[1]}</b> · ${f[2]}</span></div>` : ""}</div>
+    <div class="pw-feat">${VETRINA.filter(k => k !== pwFocus).slice(0, 5).map(k => `<div class="pw-f"><span class="ic">${FEATURE[k][0]}</span><div><b>${FEATURE[k][1]}</b><span>${FEATURE[k][2]}</span></div></div>`).join("")}
+      <div class="pw-small" style="text-align:left">…e poi conti e obiettivi illimitati, sincronizzazione cifrata, report PDF.</div></div>
+    <div class="pw-plans">
+      <button class="plan${pwPiano === "mensile" ? " on" : ""}" data-act="pwPiano" data-p="mensile"><small>Mensile</small><b>${fmtEuro0(m)}</b><span>al mese</span></button>
+      <button class="plan${pwPiano === "annuale" ? " on" : ""}" data-act="pwPiano" data-p="annuale"><span class="save">−${risp}%</span><small>Annuale</small><b>${fmtEuro0(a)}</b><span>solo ${fmtEuro0(a / 12)} al mese</span></button>
+    </div>
+    <div class="pw-cta">
+      ${puoProvare ? `<button class="btn primary" data-act="pwProva">Prova gratis per ${PRO.giorniProva} giorni</button>
+        <button class="btn" data-act="pwCompra">Abbonati subito · ${fmtEuro0(pwPiano === "annuale" ? a : m)}${pwPiano === "annuale" ? "/anno" : "/mese"}</button>`
+      : `<button class="btn primary" data-act="pwCompra">Abbonati · ${fmtEuro0(pwPiano === "annuale" ? a : m)}${pwPiano === "annuale" ? "/anno" : "/mese"}</button>`}
+      <div class="pw-small">${puoProvare ? "Nessuna carta richiesta per la prova · " : ""}Disdici quando vuoi · I tuoi dati restano sempre tuoi</div>
+      <details id="pwDet"><summary class="pw-small" style="cursor:pointer">Hai già acquistato? Inserisci la chiave di licenza</summary>
+        <div class="pw-lic" style="margin-top:10px"><input id="pwKey" placeholder="Chiave di licenza ricevuta via email" autocomplete="off"><button class="btn" data-act="pwAttiva">Attiva</button></div></details>
+    </div>`;
+}
+function compraPro() {
+  const url = pwPiano === "annuale" ? PRO.checkoutAnnuale : PRO.checkoutMensile;
+  if (!url) return toast(LIC.provaInizio ? "Gli abbonamenti apriranno a brevissimo!" : "Gli abbonamenti apriranno a brevissimo: intanto prova Pro gratis!");
+  window.open(url, "_blank", "noopener");
+  const d = $("pwDet"); if (d) d.open = true;
+  toast("Dopo il pagamento riceverai la chiave via email: incollala qui");
+}
+
+/* --- blocco sfocato sulle sezioni Pro --- */
+function lock(id, f) {
+  const el = $(id); if (!el) return;
+  const box = el.closest(".card") || el, attivo = !isPro();
+  box.classList.toggle("pro-lock", attivo);
+  const ov = box.querySelector(":scope > .lock-ov");
+  if (attivo && !ov) {
+    const [e, t, d] = FEATURE[f];
+    box.insertAdjacentHTML("beforeend", `<div class="lock-ov"><div class="lock-box"><span class="pro-badge">✦ PRO</span><b>${e} ${t}</b><p>${d}</p><button class="btn primary sm" data-act="paywall" data-f="${f}">Sblocca con Pro</button></div></div>`);
+  } else if (!attivo && ov) ov.remove();
+}
+
+function festeggia() {
+  const box = document.createElement("div"); box.className = "confetti";
+  const col = ["#6366f1", "#ec4899", "#f59e0b", "#10b981", "#06b6d4", "#8b5cf6"];
+  for (let i = 0; i < 140; i++) {
+    const s = document.createElement("i");
+    s.style.cssText = `left:${Math.random() * 100}vw;background:${col[i % 6]};animation-delay:${Math.random() * .7}s;animation-duration:${2 + Math.random() * 2}s;width:${6 + Math.random() * 6}px;height:${9 + Math.random() * 9}px;--r:${Math.random() * 720 - 360}deg`;
+    box.appendChild(s);
+  }
+  document.body.appendChild(box);
+  setTimeout(() => box.remove(), 5000);
+}
+
+/* --- pagina Pro --- */
+function renderPro() {
+  let stato;
+  if (licenzaAttiva()) stato = `<span class="pro-badge">✓ PRO ATTIVO</span><h2>Grazie per sostenere Fondi 💜</h2><p>Licenza attiva${LIC.email ? ` per <b>${esc(LIC.email)}</b>` : ""}${LIC.scade ? ` · termina il ${new Date(LIC.scade).toLocaleDateString("it-IT")}` : ""}.</p>
+      <div class="btn-row"><a class="btn" href="${PRO.gestisci}" target="_blank" rel="noopener">Gestisci abbonamento</a><button class="btn ghost" style="color:#fff;border-color:rgba(255,255,255,.4)" data-act="proRimuovi">Rimuovi licenza da questo dispositivo</button></div>`;
+  else if (provaAttiva()) stato = `<span class="pro-badge">✦ PROVA ATTIVA</span><h2>Ti restano ${giorniProva()} ${giorniProva() === 1 ? "giorno" : "giorni"} di Pro</h2><p>Abbonati ora per non perdere previsioni, simulatore e tutte le funzioni Pro.</p>
+      <div class="btn-row"><button class="btn" data-act="paywall">Scegli il tuo piano</button></div>`;
+  else stato = `<span class="pro-badge">✦ FONDI PRO</span><h2>Il futuro dei tuoi soldi,<br>finalmente visibile.</h2><p>Previsioni, simulazioni a 40 anni, caccia agli abbonamenti, piano anti-debiti e molto altro. Da ${fmtEuro0(PRO.prezzoAnnuale / 12)} al mese.</p>
+      <div class="btn-row">${LIC.provaInizio ? "" : `<button class="btn" data-act="pwProva">Prova gratis ${PRO.giorniProva} giorni</button>`}<button class="btn ghost" style="color:#fff;border-color:rgba(255,255,255,.4)" data-act="paywall">Vedi i piani</button></div>
+      ${LIC.motivo ? `<p style="margin:14px 0 0">⚠️ ${esc(LIC.motivo)}</p>` : ""}`;
+  const dove = { futuro: "futuro", previsione: "pianificazione", wrapped: "report", abbonamenti: "pianificazione", debiti: "debiti", import: "impostazioni", sync: "impostazioni", report: "report", rollover: "budget" };
+  const riga = (t, g, p) => `<tr><td>${t}</td><td class="r">${g}</td><td class="r">${p}</td></tr>`;
+  $("proPage").innerHTML = `<div class="pro-page-hero">${stato}</div>
+    <div class="pro-grid">${VETRINA.map(k => `<div class="card pro-card" data-goto="${dove[k]}" style="cursor:pointer"><span class="e">${FEATURE[k][0]}</span><b>${FEATURE[k][1]}</b><p>${FEATURE[k][2]}</p></div>`).join("")}</div>
+    <div class="grid" style="margin-top:18px">
+      <div class="card span-7"><div class="card-head"><h2>Gratis o Pro?</h2></div><div class="table-wrap"><table>
+        <thead><tr><th></th><th class="r">Gratis</th><th class="r">Pro</th></tr></thead><tbody>
+        ${riga("Movimenti, categorie, inserimento rapido", "✓", "✓")}${riga("Puoi spendere oggi, budget, consigli", "✓", "✓")}${riga("Ricorrenti, obiettivi, conti", `fino a ${PRO.limiteObiettivi} obiettivi e ${PRO.limiteConti} conti`, "illimitati")}
+        ${VETRINA.map(k => riga(`${FEATURE[k][0]} ${FEATURE[k][1]}`, "—", "✓")).join("")}</tbody></table></div></div>
+      <div class="card span-5"><div class="card-head"><h2>Domande frequenti</h2></div>
+        <p><b>Come disdico?</b><br><span class="muted">In un clic dalla pagina di gestione dell'abbonamento. Nessun vincolo.</span></p>
+        <p><b>Che fine fanno i miei dati se smetto?</b><br><span class="muted">Restano tutti tuoi, sul tuo dispositivo. Si bloccano solo le funzioni Pro.</span></p>
+        <p><b>I miei dati finiscono su un server?</b><br><span class="muted">No. Fondi funziona sul tuo dispositivo; la sincronizzazione è cifrata con una password che conosci solo tu.</span></p>
+        <p style="margin-bottom:0"><b>Come attivo Pro su un altro dispositivo?</b><br><span class="muted">Inserisci la stessa chiave di licenza che hai ricevuto via email.</span></p></div>
+    </div>`;
+}
+
+/* =====================================================================
+   IL TUO FUTURO · simulatore
+   ===================================================================== */
+const FUT_KEY = "fondi-futuro";
+let FUT = null;
+try { FUT = JSON.parse(localStorage.getItem(FUT_KEY) || "null"); } catch (e) { }
+const salvaFut = () => { if (!DEMO) localStorage.setItem(FUT_KEY, JSON.stringify(FUT)); };
+function futDefault() {
+  const prec = [1, 2, 3].map(k => riepilogo(shiftMese(MESE_CORR, -k))).filter(r => r.n);
+  const risp = prec.length ? somma(prec.map(r => r.risparmiato)) / prec.length : 200;
+  return { start: Math.max(0, Math.round(patrimonio() / 100) * 100), risp: Math.max(0, Math.round(risp / 10) * 10), rend: 4, infl: 2, cresc: 2, anni: 20, eta: 30, eventi: FUT ? FUT.eventi : [] };
+}
+const PRESET = [
+  { icona: "🚗", nome: "Auto nuova", anno: 3, unaTantum: 18000, mensile: 0, durata: 0 },
+  { icona: "🏠", nome: "Casa: anticipo e mutuo", anno: 5, unaTantum: 40000, mensile: -250, durata: 25 },
+  { icona: "👶", nome: "Un figlio", anno: 2, unaTantum: 3000, mensile: -550, durata: 18 },
+  { icona: "💼", nome: "Aumento di stipendio", anno: 1, unaTantum: 0, mensile: 250, durata: 0 },
+  { icona: "✈️", nome: "Anno sabbatico", anno: 6, unaTantum: 22000, mensile: 0, durata: 0 },
+  { icona: "🎓", nome: "Master o corso", anno: 1, unaTantum: 9000, mensile: 0, durata: 0 },
+  { icona: "💍", nome: "Matrimonio", anno: 3, unaTantum: 25000, mensile: 0, durata: 0 },
+];
+function simula(p, conEventi = true, extraRisp = 0) {
+  const rm = Math.pow(1 + p.rend / 100, 1 / 12) - 1;
+  let v = p.start, vers = p.start;
+  const serie = [{ a: 0, v, vers, reale: v }];
+  for (let m = 1; m <= p.anni * 12; m++) {
+    const anno = Math.floor((m - 1) / 12);
+    v *= 1 + rm;
+    let flusso = (p.risp + extraRisp) * Math.pow(1 + p.cresc / 100, anno);
+    if (conEventi) for (const e of p.eventi) {
+      const ini = e.anno * 12;
+      if (e.unaTantum && m === ini + 1) flusso -= e.unaTantum;
+      if (e.mensile && m > ini && (!e.durata || m <= ini + e.durata * 12)) flusso += e.mensile;
+    }
+    v += flusso; vers += flusso;
+    if (m % 12 === 0) serie.push({ a: m / 12, v, vers, reale: v / Math.pow(1 + p.infl / 100, m / 12) });
+  }
+  return serie;
+}
+const SLIDER = [
+  ["start", "Patrimonio di partenza", 0, 300000, 500, v => euroK(v) + " €"],
+  ["risp", "Risparmio al mese", 0, 4000, 10, v => fmtEuro0(v).replace(",00", "")],
+  ["cresc", "Il risparmio cresce ogni anno del", 0, 10, .5, v => v.toLocaleString("it-IT") + "%"],
+  ["rend", "Rendimento annuo degli investimenti", 0, 10, .5, v => v.toLocaleString("it-IT") + "%"],
+  ["infl", "Inflazione", 0, 6, .5, v => v.toLocaleString("it-IT") + "%"],
+  ["anni", "Orizzonte", 5, 40, 1, v => v + " anni"],
+  ["eta", "La tua età oggi", 16, 80, 1, v => v + " anni"],
+];
+function renderFuturo() {
+  if (!FUT) { FUT = futDefault(); }
+  const box = $("futInput");
+  if (!box.dataset.ok) {
+    box.innerHTML = SLIDER.map(([k, t, min, max, step, f]) => `<div><div class="sl-top"><span>${t}</span><b id="sv-${k}">${f(FUT[k])}</b></div><input type="range" min="${min}" max="${Math.max(max, FUT[k])}" step="${step}" value="${FUT[k]}" data-fut="${k}"></div>`).join("");
+    box.dataset.ok = "1";
+  }
+  $("futPreset").innerHTML = PRESET.map((p, i) => `<button class="preset" data-act="futAdd" data-i="${i}">${p.icona} ${p.nome}</button>`).join("");
+  $("futEventi").innerHTML = FUT.eventi.length ? FUT.eventi.map((e, i) => `<div class="ev-row"><span class="e">${e.icona}</span>
+      <label>Evento<input value="${esc(e.nome)}" data-ev="${i}" data-k="nome"></label>
+      <label>Tra quanti anni<input type="number" min="0" max="40" value="${e.anno}" data-ev="${i}" data-k="anno"></label>
+      <label>Spesa una tantum €<input type="number" step="500" value="${e.unaTantum}" data-ev="${i}" data-k="unaTantum"></label>
+      <label>Al mese € (+/−)<input type="number" step="50" value="${e.mensile}" data-ev="${i}" data-k="mensile"></label>
+      <label>Per anni (0 = sempre)<input type="number" min="0" max="40" value="${e.durata}" data-ev="${i}" data-k="durata"></label>
+      <button class="icon-btn del" data-act="futDel" data-i="${i}" title="Togli">${icon("trash", 16)}</button></div>`).join("")
+    : `<p class="hint" style="margin:0">Tocca un evento qui sopra per aggiungerlo: puoi modificarne cifre e anni.</p>`;
+  calcolaFuturo();
+  lock("futHero", "futuro"); lock("futChart", "futuro"); lock("futEventi", "futuro");
+}
+function calcolaFuturo() {
+  const p = FUT, s = simula(p), s0 = simula(p, false), sPiu = simula(p, true, 100);
+  const fin = s[s.length - 1], fin0 = s0[s0.length - 1], annoFin = new Date().getFullYear() + p.anni;
+  const em = coperturaEmergenza(), speseAnno = (em.media || Math.max(800, p.risp * 3)) * 12, target = speseAnno * 25;
+  const lib = s.find(x => x.reale >= target);
+  const mil = s.find(x => x.v >= 1e6);
+  $("futHero").innerHTML = `
+    <div class="fh-item"><small>Nel ${annoFin} avrai</small><b class="money">${e0(Math.round(fin.v))}</b><span>a ${p.eta + p.anni} anni · ${e0(Math.round(fin.reale))} in soldi di oggi</span></div>
+    <div class="fh-item"><small>🌴 Libertà finanziaria</small><b>${lib ? (lib.a === 0 ? "Già raggiunta!" : `a ${p.eta + lib.a} anni`) : "Non ancora"}</b><span>${lib ? `nel ${new Date().getFullYear() + lib.a}: il patrimonio copre per sempre le tue spese (regola del 4%)` : `servono ${euroK(target)} € (25 anni delle tue spese) · alza il risparmio o l'orizzonte`}</span></div>
+    <div class="fh-item"><small>✨ Interessi composti</small><b class="money">${e0(Math.max(0, Math.round(fin.v - fin.vers)))}</b><span>guadagnati senza muovere un dito${mil ? ` · 🥂 primo milione a ${p.eta + mil.a} anni` : ""}</span></div>`;
+  $("futStats").innerHTML = `
+    <div class="stat"><small>Versato in totale</small><b class="money">${e0(Math.round(fin.vers))}</b></div>
+    <div class="stat"><small>Con 100 € in più al mese</small><b class="pos money">+${e0(Math.round(sPiu[sPiu.length - 1].v - fin.v))}</b><span>alla fine</span></div>
+    <div class="stat"><small>Impatto dei tuoi eventi</small><b class="money ${fin.v - fin0.v < 0 ? "neg" : "pos"}">${fin.v - fin0.v >= 0 ? "+" : "−"}${e0(Math.abs(Math.round(fin.v - fin0.v)))}</b><span>${p.eventi.length} ${p.eventi.length === 1 ? "evento" : "eventi"}</span></div>
+    <div class="stat"><small>Obiettivo libertà</small><b class="money">${e0(Math.round(target))}</b><span>spese annue ${euroK(speseAnno)} € × 25</span></div>`;
+  $("futChart").innerHTML = graficoFuturo(s, s0, p);
+}
+function graficoFuturo(s, s0, p) {
+  const W = 680, H = 300, top = 26, bottom = 26, n = s.length - 1;
+  let min = Math.min(0, ...s.map(x => x.v), ...s0.map(x => x.v)), max = Math.max(1, ...s.map(x => x.v), ...s0.map(x => x.v));
+  const step = niceStep(max - min); max = Math.ceil(max / step) * step; min = Math.floor(min / step) * step;
+  const xs = i => (i / n) * W, ys = v => top + (1 - (v - min) / (max - min)) * (H - top - bottom);
+  const pts = arr => arr.map((x, i) => `${xs(i).toFixed(1)},${ys(x).toFixed(1)}`).join(" ");
+  let g = `<svg viewBox="0 0 ${W} ${H}" class="chart"><defs><linearGradient id="gFut" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".35"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>`;
+  for (let v = min; v <= max + step / 2; v += step) g += `<line x1="0" x2="${W}" y1="${ys(v)}" y2="${ys(v)}" class="grid-line"/><text x="0" y="${ys(v) - 5}">${euroK(v)}</text>`;
+  g += `<polygon points="0,${ys(Math.max(min, 0))} ${pts(s.map(x => x.v))} ${W},${ys(Math.max(min, 0))}" fill="url(#gFut)"/>`;
+  g += `<polyline points="${pts(s0.map(x => x.v))}" fill="none" stroke="var(--faint)" stroke-width="2" stroke-dasharray="6 5"/>`;
+  g += `<polyline points="${pts(s.map(x => x.reale))}" fill="none" stroke="var(--pos)" stroke-width="2"/>`;
+  g += `<polyline points="${pts(s.map(x => x.v))}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round"/>`;
+  const passo = n > 20 ? 5 : n > 10 ? 2 : 1, y0 = new Date().getFullYear();
+  s.forEach((x, i) => { if (i % passo === 0 || i === n) g += `<text x="${xs(i)}" y="${H - 6}" text-anchor="${i === 0 ? "start" : i === n ? "end" : "middle"}">${y0 + x.a}</text>`; });
+  for (const e of p.eventi) if (e.anno <= n) g += `<text x="${xs(e.anno)}" y="16" text-anchor="middle" style="font-size:16px;fill:var(--text)">${e.icona}<title>${esc(e.nome)}</title></text><line x1="${xs(e.anno)}" x2="${xs(e.anno)}" y1="20" y2="${H - bottom}" stroke="var(--faint)" stroke-dasharray="2 4"/>`;
+  s.forEach((x, i) => (g += `<circle cx="${xs(i)}" cy="${ys(x.v)}" r="8" fill="transparent"><title>${y0 + x.a}: ${euro(Math.round(x.v))} (oggi: ${euro(Math.round(x.reale))})</title></circle>`));
+  return g + "</svg>";
+}
+
+/* =====================================================================
+   IL TUO ANNO IN FONDI · riepilogo a storie
+   ===================================================================== */
+const WR = { slides: [], i: 0, timer: null, dati: null };
+const PALETTE = [["#8b5cf6", "#ec4899"], ["#06b6d4", "#6366f1"], ["#f59e0b", "#ef4444"], ["#10b981", "#06b6d4"], ["#ec4899", "#f59e0b"], ["#6366f1", "#22d3ee"], ["#a855f7", "#10b981"], ["#ef4444", "#8b5cf6"]];
+const GIORNI_SETT = ["domenica", "lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato"];
+function datiWrapped(periodo, mese) {
+  mese = mese || meseSel;
+  const pref = periodo === "anno" ? String(annoSel) : mese;
+  const label = periodo === "anno" ? `${annoSel}` : nomeMese(mese, 1);
+  const ms = S.movimenti.filter(m => m.data.startsWith(pref));
+  const usc = ms.filter(m => m.tipo === "uscita" && gruppoDi(m.categoria) !== "risparmio");
+  if (usc.length < 5) return null;
+  const entrate = somma(ms.filter(m => m.tipo === "entrata").map(m => m.importo)), spese = somma(usc.map(m => m.importo));
+  const perCat = {}, perPosto = {}, perGiorno = {}, perSett = Array(7).fill(0);
+  for (const m of usc) {
+    perCat[m.categoria] = (perCat[m.categoria] || 0) + m.importo;
+    if (m.ricorrenteId) continue;
+    const k = chiave(m.descrizione); if (k) { const p = perPosto[k] || (perPosto[k] = { n: 0, tot: 0, nome: m.descrizione }); p.n++; p.tot += m.importo; }
+    perGiorno[m.data] = (perGiorno[m.data] || 0) + m.importo;
+    perSett[toDate(m.data).getDay()] += m.importo;
+  }
+  const topCat = Object.entries(perCat).sort((a, b) => b[1] - a[1]);
+  const posto = Object.values(perPosto).filter(p => !/affitto|mutuo|stipendio/i.test(p.nome)).sort((a, b) => b.n - a.n || b.tot - a.tot)[0];
+  const giorno = Object.entries(perGiorno).sort((a, b) => b[1] - a[1])[0];
+  const sett = perSett.indexOf(Math.max(...perSett));
+  const piccoli = usc.filter(m => m.importo < 5);
+  const tasso = entrate ? (entrate - spese) / entrate : NaN;
+  const quota = g => somma(usc.filter(m => gruppoDi(m.categoria) === g).map(m => m.importo)) / (spese || 1);
+  const svago = somma(usc.filter(m => ["Ristoranti", "Svago", "Viaggi", "Shopping"].includes(m.categoria)).map(m => m.importo)) / (spese || 1);
+  let pers;
+  if (tasso >= .3) pers = ["🦉", "Il Saggio", "Metti da parte più di quasi tutti. Il tuo io del futuro ti ringrazia."];
+  else if (svago >= .35) pers = ["🥂", "Il Bon Vivant", "Sai goderti la vita: cene, uscite, esperienze. L'importante è che il budget regga."];
+  else if (piccoli.length >= 25) pers = ["☕", "Il Collezionista di Caffè", "Tanti piccoli acquisti che, sommati, fanno una bella cifra."];
+  else if (quota("necessita") >= .65) pers = ["🏛️", "Lo Stabile", "Le spese essenziali dominano: solido e prudente, senza sprechi."];
+  else if (tasso >= .15) pers = ["🎯", "Lo Stratega", "Spendi con criterio e risparmi con costanza. Equilibrio quasi perfetto."];
+  else pers = ["🌊", "Lo Spirito Libero", "Vivi il momento. Con un budget su misura potresti avere il meglio dei due mondi."];
+  return { periodo, label, n: ms.length, entrate, spese, topCat, posto, giorno, sett, perSett, piccoli, tasso, pers, risparmiato: entrate - spese };
+}
+function slidesWrapped(d) {
+  const sl = [];
+  const add = (html, dur = 5200) => sl.push({ html, dur });
+  add(`<div class="k">Fondi presenta</div><div class="emoji">🎁</div><div class="t">${d.periodo === "anno" ? "Il tuo " + d.label : cap(d.label)}<br>in soldi, abitudini e piccoli vizi</div><div class="s">Tocca a destra per andare avanti</div>`, 4200);
+  add(`<div class="k">Hai registrato</div><div class="big">${d.n}</div><div class="t">movimenti</div><div class="s">e speso <b class="money">${euro(d.spese)}</b> tra necessità e piaceri.</div>`);
+  const [tc, tv] = d.topCat[0], ci = catInfo(tc);
+  add(`<div class="k">La tua categoria regina</div><div class="emoji">${ci.icona}</div><div class="t">${esc(tc)}</div><div class="s"><b class="money">${euro(tv)}</b> · il ${pct(tv / d.spese)} di tutte le tue spese${d.topCat[1] ? `<br>Al secondo posto: ${catInfo(d.topCat[1][0]).icona} ${esc(d.topCat[1][0])}` : ""}</div>`);
+  if (d.posto && d.posto.n >= 2) add(`<div class="k">Il tuo posto del cuore</div><div class="t">${esc(d.posto.nome)}</div><div class="big">×${d.posto.n}</div><div class="s">volte, per un totale di <b class="money">${euro(d.posto.tot)}</b>. Ti conoscono per nome? 😄</div>`);
+  if (d.giorno) add(`<div class="k">Il giorno più costoso</div><div class="big" style="font-size:clamp(40px,10vw,76px)">${cap(fmtGiorno(d.giorno[0]))}</div><div class="s">Hai speso <b class="money">${euro(d.giorno[1])}</b> in un giorno solo. Cosa è successo? 👀</div>`);
+  add(`<div class="k">Il tuo giorno da spendaccione</div><div class="big">${cap(GIORNI_SETT[d.sett])}</div><div class="s">È il giorno della settimana in cui spendi di più: <b class="money">${euro(d.perSett[d.sett])}</b> in totale.</div>`);
+  if (d.piccoli.length >= 5) add(`<div class="k">Effetto caffè</div><div class="emoji">☕</div><div class="t">${d.piccoli.length} piccoli acquisti sotto i 5 €</div><div class="s">Sembrano niente, ma insieme fanno <b class="money">${euro(somma(d.piccoli.map(m => m.importo)))}</b>.</div>`);
+  if (d.entrate) add(`<div class="k">Hai messo da parte</div><div class="big">${pct(Math.max(0, d.tasso))}</div><div class="t">${d.tasso >= .2 ? "Da campione 🏆" : d.tasso >= 0 ? "Si può fare di più 💪" : "Questa volta è andata storta 🙈"}</div><div class="s"><b class="money">${euro(d.risparmiato)}</b> su <b class="money">${euro(d.entrate)}</b> di entrate.</div>`);
+  add(`<div class="k">La tua personalità finanziaria</div><div class="emoji">${d.pers[0]}</div><div class="t">${d.pers[1]}</div><div class="s">${d.pers[2]}</div>`, 6500);
+  add(`<div class="k">${d.periodo === "anno" ? "Il tuo " + d.label : cap(d.label)} in Fondi</div><div class="emoji">${d.pers[0]}</div>
+    <div class="wr-list"><div><span>Personalità</span><span>${d.pers[1]}</span></div><div><span>Categoria regina</span><span>${ci.icona} ${esc(tc)}</span></div>${d.entrate ? `<div><span>Messo da parte</span><span>${pct(Math.max(0, d.tasso))}</span></div>` : ""}<div><span>Movimenti</span><span>${d.n}</span></div></div>
+    <div class="wr-share"><button class="btn" data-act="wrCondividi">📤 Condividi</button><button class="btn" data-act="chiudiWrapped">Fine</button></div>`, 0);
+  return sl;
+}
+function apriWrapped(periodo, mese) {
+  const d = datiWrapped(periodo, mese);
+  if (!d) return toast(`Servono almeno 5 spese ${periodo === "anno" ? "nell'anno" : "nel mese"} per il riepilogo`);
+  WR.dati = d; WR.slides = slidesWrapped(d);
+  if (!isPro()) WR.slides = [...WR.slides.slice(0, 3), { html: `<div class="emoji">🔒</div><div class="t">Il resto del tuo riepilogo<br>ti aspetta in Fondi Pro</div><div class="s">Il tuo posto del cuore, il giorno più pazzo, la tua personalità finanziaria e l'immagine da condividere.</div><div class="wr-share"><button class="btn" data-act="paywall" data-f="wrapped">✦ Scopri Fondi Pro</button></div>`, dur: 0 }];
+  WR.i = 0; $("wrapped").hidden = false; document.body.style.overflow = "hidden";
+  mostraSlide();
+}
+function mostraSlide() {
+  clearTimeout(WR.timer);
+  const s = WR.slides[WR.i], [c1, c2] = PALETTE[WR.i % PALETTE.length];
+  $("wrBars").innerHTML = WR.slides.map((x, i) => `<span class="${i < WR.i ? "done" : i === WR.i ? "cur" : ""}" style="--dur:${(s.dur || 0) / 1000}s"><i${i === WR.i && !s.dur ? ' style="width:100%"' : ""}></i></span>`).join("");
+  const el = $("wrSlide");
+  el.className = "wr-slide wr-bg"; el.style.cssText = `--c1:${c1};--c2:${c2};background:linear-gradient(160deg, color-mix(in srgb, ${c1} 45%, #0b0820), #0b0820 70%)`;
+  el.innerHTML = s.html;
+  $("wrapped").classList.toggle("has-btn", /wr-share/.test(s.html));
+  void el.offsetWidth; el.style.animation = "none"; void el.offsetWidth; el.style.animation = "";
+  if (s.dur) WR.timer = setTimeout(() => cambiaSlide(1), s.dur);
+}
+function cambiaSlide(k) {
+  const n = WR.i + k;
+  if (n < 0) return;
+  if (n >= WR.slides.length) return chiudiWrapped();
+  WR.i = n; mostraSlide();
+}
+function chiudiWrapped() { clearTimeout(WR.timer); $("wrapped").hidden = true; document.body.style.overflow = ""; }
+async function condividiWrapped() {
+  const d = WR.dati, c = document.createElement("canvas"); c.width = 1080; c.height = 1920;
+  const x = c.getContext("2d");
+  const g = x.createLinearGradient(0, 0, 1080, 1920); g.addColorStop(0, "#8b5cf6"); g.addColorStop(.5, "#4338ca"); g.addColorStop(1, "#0b0820");
+  x.fillStyle = g; x.fillRect(0, 0, 1080, 1920);
+  x.fillStyle = "rgba(236,72,153,.35)"; x.beginPath(); x.arc(980, 180, 340, 0, 7); x.fill();
+  x.fillStyle = "rgba(34,211,238,.18)"; x.beginPath(); x.arc(80, 1700, 420, 0, 7); x.fill();
+  x.textAlign = "center"; x.fillStyle = "#fff";
+  const font = (w, s) => (x.font = `${w} ${s}px "Segoe UI", system-ui, sans-serif`);
+  font(700, 44); x.globalAlpha = .85; x.fillText(d.periodo === "anno" ? `IL MIO ${d.label}` : cap(d.label).toUpperCase(), 540, 260); x.globalAlpha = 1;
+  font(900, 84); x.fillText("in Fondi", 540, 360);
+  font(400, 230); x.fillText(d.pers[0], 540, 690);
+  font(800, 86); x.fillText(d.pers[1], 540, 840);
+  const ci = catInfo(d.topCat[0][0]);
+  const righe = [["Categoria regina", `${ci.icona} ${d.topCat[0][0]}`], ["Messo da parte", d.entrate ? pct(Math.max(0, d.tasso)) : "—"], ["Movimenti", String(d.n)], ["Giorno preferito per spendere", cap(GIORNI_SETT[d.sett])]];
+  righe.forEach(([k, v], i) => {
+    const y = 1000 + i * 170;
+    x.fillStyle = "rgba(255,255,255,.13)"; x.beginPath(); x.roundRect ? x.roundRect(120, y, 840, 140, 34) : x.rect(120, y, 840, 140); x.fill();
+    x.fillStyle = "#fff"; x.textAlign = "left"; font(600, 38); x.globalAlpha = .8; x.fillText(k, 170, y + 85); x.globalAlpha = 1;
+    x.textAlign = "right"; font(800, 46); x.fillText(v, 910, y + 88);
+  });
+  x.textAlign = "center"; font(700, 40); x.fillText("€  Fondi · la tua finanza personale", 540, 1780); font(500, 32); x.globalAlpha = .75; x.fillText("francescoraiola11-ux.github.io/fondi", 540, 1835);
+  const blob = await new Promise(r => c.toBlob(r, "image/png"));
+  const file = new File([blob], "il-mio-fondi.png", { type: "image/png" });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: "Il mio riepilogo Fondi", text: "Guarda il mio riepilogo su Fondi 👉 https://francescoraiola11-ux.github.io/fondi/" }); return; } catch (e) { if (e.name === "AbortError") return; }
+  }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = file.name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast("Immagine scaricata: condividila dove vuoi!");
+}
+
+/* =====================================================================
+   REPORT PDF (stampa del browser → "Salva come PDF")
+   ===================================================================== */
+function stampaReport(periodo) {
+  const anno = periodo === "anno", pref = anno ? String(annoSel) : meseSel;
+  const label = anno ? `Anno ${annoSel}` : cap(nomeMese(meseSel, 1));
+  const r = anno ? riepilogoAnno(annoSel) : riepilogo(meseSel);
+  const ent = r.entrate, sp = r.spese, ris = ent - sp;
+  const cats = Object.entries(r.perCat).sort((a, b) => b[1] - a[1]), max = cats.length ? cats[0][1] : 1, totC = somma(cats.map(c => c[1])) || 1;
+  const top = S.movimenti.filter(m => m.tipo === "uscita" && m.data.startsWith(pref)).sort((a, b) => b.importo - a.importo).slice(0, 10);
+  const testo = h => h.replace(/<[^>]+>/g, "");
+  $("stampa").innerHTML = `
+    <div class="pr-head"><div><div class="brand">€ Fondi</div><h1>Report · ${label}</h1></div><div style="color:#6b7280;font-size:9pt">Generato il ${new Date().toLocaleDateString("it-IT")}</div></div>
+    <div class="pr-kpi"><div><small>Entrate</small><b style="color:#059669">${euro(ent)}</b></div><div><small>Spese</small><b style="color:#e11d48">${euro(sp)}</b></div><div><small>Messo da parte</small><b>${euro(ris)}</b></div><div><small>Tasso di risparmio</small><b>${ent ? pct(ris / ent) : "—"}</b></div></div>
+    ${anno ? `<h2>Mese per mese</h2><table><thead><tr><th>Mese</th><th class="r">Entrate</th><th class="r">Spese</th><th class="r">Risparmiato</th><th class="r">Tasso</th></tr></thead><tbody>${r.mesi.map(m => `<tr><td>${cap(nomeMese(m.m, 1).split(" ")[0])}</td><td class="r">${m.entrate ? euro(m.entrate) : "—"}</td><td class="r">${m.spese ? euro(m.spese) : "—"}</td><td class="r">${m.n ? euro(m.risparmiato) : "—"}</td><td class="r">${m.entrate ? pct(m.tasso) : "—"}</td></tr>`).join("")}</tbody></table>` : ""}
+    <div class="pr-two">
+      <div><h2>Spese per categoria</h2><table><tbody>${cats.map(([c, v]) => `<tr><td>${catInfo(c).icona} ${esc(c)}</td><td style="width:35%"><div class="pr-bar"><i style="width:${(v / max) * 100}%"></i></div></td><td class="r">${euro(v)}</td><td class="r" style="color:#6b7280">${pct(v / totC)}</td></tr>`).join("") || "<tr><td>Nessuna spesa</td></tr>"}</tbody></table></div>
+      <div><h2>Le 10 spese più grandi</h2><table><tbody>${top.map(m => `<tr><td>${fmtData(m.data)}</td><td>${esc(m.descrizione || m.categoria)}</td><td class="r">${euro(m.importo)}</td></tr>`).join("") || "<tr><td>Nessuna spesa</td></tr>"}</tbody></table>
+        ${anno ? "" : `<h2>Osservazioni</h2><ul class="pr-ins">${consigli(meseSel).slice(0, 5).map(c => `<li>${esc(testo(c.h))}</li>`).join("")}</ul>`}</div>
+    </div>
+    <h2>Conti</h2><table><tbody>${S.conti.map(c => `<tr><td>${TIPI_CONTO[c.tipo]} ${esc(c.nome)}</td><td>${esc(c.tipo)}</td><td class="r">${euro(saldiConti()[c.id])}</td></tr>`).join("")}<tr><td colspan="2"><b>Patrimonio netto</b></td><td class="r"><b>${euro(patrimonio())}</b></td></tr></tbody></table>
+    <div class="pr-foot">Report generato con Fondi · francescoraiola11-ux.github.io/fondi</div>`;
+  setTimeout(() => window.print(), 100);
 }
 
 /* ---------------- Installazione (PWA) ---------------- */
@@ -1737,6 +2206,7 @@ document.addEventListener("submit", e => {
   if (e.target.id !== "fSync") return;
   e.preventDefault();
   const token = $("sToken").value.trim(), pass = $("sPass").value;
+  if (!richiediPro("sync")) return;
   if (pass.length < 8) return toast("La password deve avere almeno 8 caratteri");
   e.target.querySelector("button").disabled = true;
   collegaSync(token, pass);
@@ -1757,5 +2227,6 @@ const h0 = location.hash.slice(1);
 if (RENDER[h0]) pagina = h0;
 render();
 aggiornaInstalla();
+setTimeout(ricontrollaLicenza, 1500);
 if (nuovi) toast(`${nuovi} movimenti ricorrenti registrati in automatico`);
 if (new URLSearchParams(location.search).has("nuovo")) setTimeout(() => apriModal(), 150);

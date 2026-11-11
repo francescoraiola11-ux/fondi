@@ -213,8 +213,12 @@
       <!-- ============ REPORT ============ -->
       <section class="page" data-page="report" hidden>
         <div class="grid">
-          <div class="span-12" style="display:flex;justify-content:flex-start">
+          <div class="span-12" style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
             <div class="month-switch"><button id="yPrev"></button><button id="yLabel" style="min-width:90px"></button><button id="yNext"></button></div>
+            <div class="btn-row">
+              <button class="btn" data-act="wrapped" data-periodo="anno">🎁 Il tuo anno in Fondi</button>
+              <button class="btn" data-act="pdf" data-periodo="anno">📄 Report PDF</button>
+            </div>
           </div>
           <div class="stat-strip span-12" id="repStats"></div>
           <div class="card span-12">
@@ -226,6 +230,34 @@
           <div class="card span-7"><div class="card-head"><h2>Riepilogo mensile</h2></div><div class="table-wrap"><table id="repTab"></table></div></div>
           <div class="card span-5"><div class="card-head"><h2>Categorie dell'anno</h2></div><div id="repCat"></div></div>
         </div>
+      </section>
+
+      <!-- ============ IL TUO FUTURO ============ -->
+      <section class="page" data-page="futuro" hidden>
+        <div class="grid">
+          <div class="card span-12 future-hero" id="futHero"></div>
+          <div class="card span-8">
+            <div class="card-head"><h2>Il tuo patrimonio anno per anno</h2>
+              <div class="legend"><span><i style="background:var(--accent)"></i>Con i tuoi piani</span><span><i style="background:var(--faint)"></i>Senza eventi</span><span><i style="background:var(--pos)"></i>Valore di oggi (tolta l'inflazione)</span></div>
+            </div>
+            <div id="futChart"></div>
+            <div class="stat-strip inner" id="futStats" style="margin:16px 0 0"></div>
+          </div>
+          <div class="card span-4">
+            <div class="card-head"><h2>I tuoi numeri</h2><button class="link" data-act="futReset">Ripristina</button></div>
+            <div id="futInput" class="sliders"></div>
+          </div>
+          <div class="card span-12">
+            <div class="card-head"><h2>E se…?</h2><span class="muted">aggiungi i grandi eventi della tua vita e guarda come cambia il futuro</span></div>
+            <div class="preset-row" id="futPreset"></div>
+            <div id="futEventi"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ PRO ============ -->
+      <section class="page" data-page="pro" hidden>
+        <div id="proPage"></div>
       </section>
 
       <!-- ============ CONTI ============ -->
@@ -364,6 +396,26 @@
     </div>
   </div>
 </div>
+
+<!-- ============ PAYWALL ============ -->
+<div class="overlay" id="paywall" hidden>
+  <div class="modal paywall" role="dialog" aria-modal="true">
+    <button class="icon-btn pw-close" data-act="chiudiPaywall" title="Chiudi"></button>
+    <div id="pwBody"></div>
+  </div>
+</div>
+
+<!-- ============ WRAPPED ============ -->
+<div class="wrapped" id="wrapped" hidden>
+  <div class="wr-bars" id="wrBars"></div>
+  <button class="icon-btn wr-close" data-act="chiudiWrapped" title="Chiudi"></button>
+  <div class="wr-slide" id="wrSlide"></div>
+  <div class="wr-tap wr-prev" data-act="wrPrev"></div>
+  <div class="wr-tap wr-next" data-act="wrNext"></div>
+</div>
+
+<!-- ============ STAMPA (report PDF) ============ -->
+<div id="stampa"></div>
 
 <div id="toast"></div>
 <script src="app.js"></script>

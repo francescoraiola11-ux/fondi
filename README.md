@@ -1,6 +1,7 @@
 # Fondi · Finanza personale
 
-Gestore completo delle finanze personali. È gratuito, funziona offline e i dati restano solo sul tuo computer.
+Gestore completo delle finanze personali. Funziona offline e i dati restano solo sul tuo dispositivo.
+Piano **gratuito** completo per l'uso di tutti i giorni + **Fondi Pro** in abbonamento (3,99 €/mese o 29,99 €/anno, prova gratuita di 7 giorni).
 **Online e installabile:** https://francescoraiola11-ux.github.io/fondi/
 (iPhone: Safari → Condividi → Aggiungi alla schermata Home · Android: Chrome → ⋮ → Installa app)
 
@@ -28,6 +29,19 @@ In locale: apri `index.html` con il browser. Per un'anteprima con 6 mesi di dati
 | **Conti** | Più conti, trasferimenti, patrimonio netto, correzione del saldo |
 | **Privacy** | Tasto per nascondere gli importi (P), nessun server |
 | **Annulla** | Ogni modifica importante si può annullare dalla notifica |
+
+## Gratis e Pro
+| Gratis | Pro |
+|---|---|
+| Movimenti, inserimento rapido, categorie automatiche, budget, consigli, ricorrenti, backup | Tutto il piano gratuito |
+| Fino a 3 conti e 2 obiettivi | Conti e obiettivi illimitati |
+| | 🔮 **Il tuo futuro**: simulatore a 40 anni con eventi di vita e libertà finanziaria |
+| | 🎁 **Il tuo anno in Fondi**: riepilogo a storie con immagine da condividere |
+| | 📄 Report PDF, 📈 previsione del saldo, 🕵️ abbonamenti rilevati, 🏔️ piano debiti |
+| | 📥 Import CSV della banca, ☁️ sincronizzazione cifrata, ↻ budget con riporto |
+
+Pagamenti tramite Gumroad (o Lemon Squeezy): la piattaforma incassa, applica l'IVA e manda al cliente una chiave di licenza, che l'app verifica direttamente dal browser. Configurazione in `app.js`, oggetto `PRO`.
+Anteprima della versione gratuita con dati di esempio: `index.html?demo&free`.
 
 ## Scorciatoie
 `N` nuovo movimento · `/` cerca · `P` nascondi importi · `←` `→` cambia mese · `1`–`9` cambia pagina · `Shift+Invio` salva e aggiungi un altro
