@@ -1759,10 +1759,10 @@ function caricaDemo() {
    ===================================================================== */
 const PRO = {
   provider: "gumroad",          // "gumroad" oppure "lemonsqueezy"
-  gumroadProductId: "",         // Gumroad → prodotto → Content → License key → product_id
+  gumroadProductId: "FtrNhD0FqGXkqY77Xmb_3A==",         // Gumroad → prodotto → Content → License key → product_id
   lemonProductId: "",           // facoltativo: ID prodotto Lemon Squeezy (controllo extra)
-  checkoutMensile: "",          // link di acquisto del piano mensile
-  checkoutAnnuale: "",          // link di acquisto del piano annuale
+  checkoutMensile: "https://francesco743.gumroad.com/l/bthyoi?wanted=true",          // link di acquisto del piano mensile
+  checkoutAnnuale: "https://francesco743.gumroad.com/l/bthyoi?wanted=true&recurrence=yearly",          // link di acquisto del piano annuale
   gestisci: "https://app.gumroad.com/library",
   prezzoMensile: 3.99, prezzoAnnuale: 29.99, giorniProva: 7,
   limiteConti: 3, limiteObiettivi: 2,
