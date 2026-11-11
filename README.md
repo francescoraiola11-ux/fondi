@@ -1,7 +1,10 @@
 # Fondi · Finanza personale
 
 Gestore completo delle finanze personali. È gratuito, funziona offline e i dati restano solo sul tuo computer.
-Apri `index.html` con il browser. Per un'anteprima con 6 mesi di dati di esempio, che non tocca i tuoi dati, apri `index.html?demo`.
+**Online e installabile:** https://francescoraiola11-ux.github.io/fondi/
+(iPhone: Safari → Condividi → Aggiungi alla schermata Home · Android: Chrome → ⋮ → Installa app)
+
+In locale: apri `index.html` con il browser. Per un'anteprima con 6 mesi di dati di esempio, che non tocca i tuoi dati, apri `index.html?demo`.
 
 ## File
 - `index.html`: struttura delle pagine
