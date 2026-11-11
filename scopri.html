@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fondi · L'app gratis per gestire spese, budget e risparmi</title>
+<meta name="description" content="Fondi è l'app italiana gratuita per gestire spese e budget: ti dice quanto puoi spendere oggi, prevede il saldo, simula il tuo futuro finanziario. Senza registrazione, senza pubblicità, i dati restano sul tuo telefono.">
+<meta name="keywords" content="app gestione spese, app budget gratis, gestire le spese, risparmiare soldi, budget familiare, app finanze personali, app risparmio">
+<link rel="canonical" href="https://francescoraiola11-ux.github.io/fondi/scopri.html">
+<meta name="theme-color" content="#6366f1">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="it_IT">
+<meta property="og:title" content="Fondi · Sai quanto puoi spendere oggi?">
+<meta property="og:description" content="L'app gratuita che gestisce spese e budget al posto tuo. Senza registrazione, senza pubblicità.">
+<meta property="og:url" content="https://francescoraiola11-ux.github.io/fondi/scopri.html">
+<meta property="og:image" content="https://francescoraiola11-ux.github.io/fondi/promo/og.jpg">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://francescoraiola11-ux.github.io/fondi/promo/og.jpg">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Fondi","applicationCategory":"FinanceApplication","operatingSystem":"Android, iOS, Windows, macOS","inLanguage":"it","url":"https://francescoraiola11-ux.github.io/fondi/","offers":[{"@type":"Offer","price":"0","priceCurrency":"EUR","name":"Gratis"},{"@type":"Offer","price":"3.99","priceCurrency":"EUR","name":"Fondi Pro mensile"}]}
+</script>
+<style>
+*{box-sizing:border-box;margin:0}
+:root{--bg:#07060f;--card:#12111c;--line:#262438;--text:#f4f3ff;--muted:#a3a1bd;--acc:#8b5cf6;--acc2:#6366f1;--pink:#ec4899;--ok:#10b981}
+html{scroll-behavior:smooth}
+body{font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.55;overflow-x:hidden}
+a{color:inherit}
+.wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+nav{display:flex;justify-content:space-between;align-items:center;padding:20px 0}
+.logo{display:flex;gap:10px;align-items:center;font-weight:800;font-size:19px;text-decoration:none}
+.logo i{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,var(--acc2),var(--acc));display:grid;place-items:center;font-style:normal}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 22px;border-radius:14px;font-weight:700;text-decoration:none;border:1px solid var(--line);background:var(--card);transition:transform .2s,box-shadow .2s}
+.btn:hover{transform:translateY(-2px)}
+.btn.p{border:0;background:linear-gradient(135deg,var(--acc2),var(--acc) 55%,var(--pink));box-shadow:0 14px 40px -12px var(--acc)}
+.btn.sm{padding:9px 16px;border-radius:11px;font-size:14px}
+.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;padding:40px 0 70px;position:relative}
+.hero::before{content:"";position:absolute;width:700px;height:700px;right:-200px;top:-200px;background:radial-gradient(circle,#8b5cf655,transparent 65%);z-index:-1}
+.tag{display:inline-block;padding:6px 12px;border-radius:99px;background:#8b5cf622;color:#c4b5fd;font-weight:700;font-size:13px;margin-bottom:18px}
+h1{font-size:clamp(38px,6vw,64px);line-height:1.04;letter-spacing:-.035em;font-weight:900}
+h1 span{background:linear-gradient(90deg,#a78bfa,#f472b6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{font-size:19px;color:var(--muted);margin:20px 0 28px;max-width:540px}
+.cta{display:flex;gap:12px;flex-wrap:wrap}
+.trust{display:flex;gap:18px;flex-wrap:wrap;margin-top:24px;color:var(--muted);font-size:14px}
+.trust b{color:var(--text)}
+.phones{position:relative;height:600px}
+.phone{position:absolute;width:270px;border-radius:38px;border:8px solid #1d1b2b;box-shadow:0 40px 80px -30px #000,0 0 0 1px #33304a;overflow:hidden;background:#000}
+.phone img{display:block;width:100%;height:auto}
+.phone.a{left:0;top:30px;transform:rotate(-5deg);z-index:2}
+.phone.b{right:0;top:0;transform:rotate(5deg)}
+section{padding:70px 0}
+h2{font-size:clamp(28px,4vw,42px);letter-spacing:-.03em;line-height:1.1;margin-bottom:14px}
+.sub{color:var(--muted);font-size:18px;max-width:640px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:36px}
+.f{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:24px}
+.f .e{font-size:30px}
+.f b{display:block;font-size:18px;margin:10px 0 6px}
+.f p{color:var(--muted);font-size:15px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:50px;align-items:center}
+.split img{width:100%;height:auto;border-radius:18px;border:1px solid var(--line);box-shadow:0 30px 60px -30px #000}
+.list{list-style:none;padding:0;margin-top:22px;display:grid;gap:12px}
+.list li{padding-left:30px;position:relative;color:var(--muted)}
+.list li::before{content:"✓";position:absolute;left:0;color:var(--ok);font-weight:900}
+.list b{color:var(--text)}
+.price{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:36px;max-width:820px}
+.plan{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:28px}
+.plan.pro{border:2px solid var(--acc);background:linear-gradient(180deg,#8b5cf61c,var(--card) 40%)}
+.plan h3{font-size:20px}
+.plan .v{font-size:40px;font-weight:900;letter-spacing:-.03em;margin:8px 0}
+.plan .v small{font-size:16px;color:var(--muted);font-weight:600}
+.faq{max-width:780px;margin-top:30px}
+details{border-bottom:1px solid var(--line);padding:18px 0}
+summary{cursor:pointer;font-weight:700;font-size:17px}
+details p{color:var(--muted);margin-top:10px}
+.final{text-align:center;background:linear-gradient(135deg,#4338ca,#7c3aed 55%,#db2777);border-radius:30px;padding:60px 24px;margin:40px 0 70px}
+.final p{opacity:.9;font-size:18px;margin:12px 0 26px}
+.final .btn{background:#fff;color:#1e1b4b;border:0}
+footer{color:var(--muted);font-size:14px;padding:30px 0 50px;text-align:center}
+@media (max-width:860px){
+  .hero,.split{grid-template-columns:1fr}
+  .phones{height:480px;max-width:420px;margin:0 auto;width:100%}
+  .phone{width:210px}
+  .grid{grid-template-columns:1fr}
+  .price{grid-template-columns:1fr}
+  .split .txt{order:-1}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav><a class="logo" href="./scopri.html"><i>€</i>Fondi</a><a class="btn sm p" href="./?utm_source=scopri">Apri l'app</a></nav>
+
+  <header class="hero">
+    <div>
+      <span class="tag">✨ Gratis · Senza registrazione · Senza pubblicità</span>
+      <h1>Sai quanto puoi <span>spendere oggi</span>?</h1>
+      <p class="lead">Fondi è l'app che gestisce spese e budget al posto tuo. Ti dice ogni giorno quanto puoi spendere senza sforare, prevede il saldo dei prossimi mesi e ti mostra quando sarai libero finanziariamente.</p>
+      <div class="cta"><a class="btn p" href="./?utm_source=scopri">Inizia gratis →</a><a class="btn" href="./?demo&utm_source=scopri">👀 Guarda la demo</a></div>
+      <div class="trust"><span>🔒 <b>I dati restano sul tuo telefono</b></span><span>📱 <b>Android, iPhone e PC</b></span><span>💬 <b>In italiano</b></span></div>
+    </div>
+    <div class="phones">
+      <div class="phone a"><img src="promo/m-panoramica.jpg" alt="Fondi: quanto puoi spendere oggi" width="600" height="1298"></div>
+      <div class="phone b"><img src="promo/m-storia-personalita.jpg" alt="Il tuo mese in Fondi: la tua personalità finanziaria" width="600" height="1298" loading="lazy"></div>
+    </div>
+  </header>
+</div>
+
+<section style="background:#0c0b16;border-block:1px solid var(--line)">
+  <div class="wrap">
+    <h2>Tutto quello che le altre app non fanno.</h2>
+    <p class="sub">Niente fogli Excel, niente collegamenti alla banca, niente abbonamenti nascosti. Scrivi <b>"12,50 pizza ieri"</b> e Fondi capisce il resto.</p>
+    <div class="grid">
+      <div class="f"><span class="e">💸</span><b>Puoi spendere oggi</b><p>Un solo numero, aggiornato ogni giorno: già tolte bollette, affitto e quello che vuoi risparmiare.</p></div>
+      <div class="f"><span class="e">⚡</span><b>Inserimento in 2 secondi</b><p>Importo, data e categoria compilati da soli. Impara dai tuoi movimenti e conosce i negozi italiani.</p></div>
+      <div class="f"><span class="e">🎯</span><b>Budget e obiettivi</b><p>Vacanza, auto, fondo di emergenza: ti dice quanto mettere da parte ogni mese per arrivarci in tempo.</p></div>
+      <div class="f"><span class="e">📈</span><b>Saldo dei prossimi 90 giorni</b><p>Scopri oggi se a fine mese andrai in rosso, non quando è troppo tardi.</p></div>
+      <div class="f"><span class="e">🕵️</span><b>Caccia agli abbonamenti</b><p>Netflix, palestra, app dimenticate: Fondi trova da solo i pagamenti che si ripetono.</p></div>
+      <div class="f"><span class="e">📥</span><b>Import dalla banca</b><p>Carica il CSV del tuo home banking: categorie automatiche e doppioni scartati.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap split">
+    <img src="promo/d-futuro.jpg" alt="Simulatore Il tuo futuro di Fondi" width="900" height="562" loading="lazy">
+    <div class="txt">
+      <span class="tag">🔮 Il tuo futuro</span>
+      <h2>Quanto avrai tra 20 anni? Ora lo sai.</h2>
+      <p class="sub">Muovi i cursori e guarda il tuo patrimonio crescere anno per anno. Aggiungi un mutuo, un'auto, un figlio o un aumento e vedi subito l'effetto.</p>
+      <ul class="list">
+        <li><b>A che età sarai libero</b> di smettere di lavorare (regola del 4%)</li>
+        <li><b>Quanto ti regalano gli interessi composti</b>, in euro di oggi</li>
+        <li><b>Cosa cambia con 100 € in più al mese</b></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap split">
+    <div class="txt">
+      <span class="tag">🎁 Il tuo mese in Fondi</span>
+      <h2>Il riepilogo dei tuoi soldi, come una storia.</h2>
+      <p class="sub">La tua categoria regina, il posto dove torni sempre, il giorno più folle e la tua personalità finanziaria. Da condividere con gli amici.</p>
+      <ul class="list"><li><b>Sei "Il Saggio", "Il Bon Vivant" o "Lo Spirito Libero"?</b></li><li>Immagine pronta per Instagram e WhatsApp</li></ul>
+    </div>
+    <div class="phones" style="height:520px">
+      <div class="phone a" style="width:240px"><img src="promo/m-storia-regina.jpg" alt="Storia: la tua categoria regina" width="600" height="1298" loading="lazy"></div>
+      <div class="phone b" style="width:240px"><img src="promo/m-futuro.jpg" alt="Il tuo futuro su telefono" width="600" height="1298" loading="lazy"></div>
+    </div>
+  </div>
+</section>
+
+<section style="background:#0c0b16;border-block:1px solid var(--line)">
+  <div class="wrap">
+    <h2>Gratis per sempre. Pro se vuoi di più.</h2>
+    <p class="sub">Il piano gratuito basta per gestire le spese di tutti i giorni. Pro sblocca previsioni, simulatore e strumenti avanzati.</p>
+    <div class="price">
+      <div class="plan"><h3>Gratis</h3><div class="v">0 €</div><ul class="list"><li>Movimenti illimitati e inserimento rapido</li><li>"Puoi spendere oggi", budget e consigli</li><li>Spese ricorrenti e backup</li><li>Fino a 3 conti e 2 obiettivi</li></ul><a class="btn" style="margin-top:22px" href="./?utm_source=scopri">Inizia gratis</a></div>
+      <div class="plan pro"><h3>✦ Fondi Pro</h3><div class="v">2,50 € <small>/mese con il piano annuale</small></div><ul class="list"><li><b>Il tuo futuro</b> e libertà finanziaria</li><li>Saldo previsto a 90 giorni</li><li>Storie del mese e dell'anno</li><li>Abbonamenti rilevati, piano anti-debiti</li><li>Import CSV, sincronizzazione PC–telefono, report PDF</li></ul><a class="btn p" style="margin-top:22px" href="./#pro">Prova Pro gratis 7 giorni</a></div>
+    </div>
+    <p class="sub" style="font-size:14px;margin-top:14px">Pro: 3,99 €/mese oppure 29,99 €/anno, IVA esclusa se dovuta. Disdici quando vuoi.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Domande frequenti</h2>
+    <div class="faq">
+      <details><summary>Devo collegare il conto in banca?</summary><p>No. Inserisci le spese a mano in pochi secondi o carica il file CSV del tuo home banking. Fondi non chiede mai le credenziali della banca.</p></details>
+      <details><summary>Dove finiscono i miei dati?</summary><p>Restano sul tuo dispositivo. Non c'è un account e non c'è un server che li raccoglie. Se attivi la sincronizzazione Pro, i dati viaggiano cifrati con una password che conosci solo tu.</p></details>
+      <details><summary>Come la installo sul telefono?</summary><p>Apri Fondi dal telefono. Su Android: Chrome → menu ⋮ → "Installa app". Su iPhone: Safari → Condividi → "Aggiungi alla schermata Home". Funziona anche offline.</p></details>
+      <details><summary>È davvero gratis?</summary><p>Sì, il piano gratuito non scade e non ha pubblicità. Fondi Pro è facoltativo e ha 7 giorni di prova senza carta.</p></details>
+      <details><summary>Posso usarla in famiglia o in coppia?</summary><p>Sì: con Pro sincronizzi più dispositivi con la stessa password e vedete gli stessi conti.</p></details>
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+  <div class="final">
+    <h2>Il primo mese in cui sai dove vanno i tuoi soldi.</h2>
+    <p>Due minuti per iniziare. Nessuna registrazione.</p>
+    <a class="btn" href="./?utm_source=scopri">Apri Fondi gratis →</a>
+  </div>
+  <footer>€ Fondi · fatto in Italia · <a href="./">Apri l'app</a> · <a href="./?demo">Demo</a></footer>
+</div>
+</body>
+</html>

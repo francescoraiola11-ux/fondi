@@ -779,7 +779,7 @@ function renderShell() {
   const t = S.impostazioni.tema;
   $("btnTema").innerHTML = `${icon(t === "dark" ? "moon" : t === "light" ? "sun" : "auto", 19)}<span>Tema: ${t === "dark" ? "scuro" : t === "light" ? "chiaro" : "automatico"}</span>`;
   const pn = patrimonio();
-  $("sideCard").innerHTML = `<b class="money">${euro(pn)}</b>patrimonio netto · ${S.conti.length} ${S.conti.length === 1 ? "conto" : "conti"}<div id="syncSide" style="margin-top:6px"></div><div style="margin-top:6px">${licenzaAttiva() ? '<span class="pro-badge">✦ PRO</span>' : provaAttiva() ? `<a class="link" data-goto="pro">✦ Prova Pro: ${giorniProva()} ${giorniProva() === 1 ? "giorno" : "giorni"}</a>` : DEMO ? "" : '<a class="link" data-goto="pro">✦ Passa a Pro</a>'}</div>`;
+  $("sideCard").innerHTML = `<b class="money">${euro(pn)}</b>patrimonio netto · ${S.conti.length} ${S.conti.length === 1 ? "conto" : "conti"}<div id="syncSide" style="margin-top:6px"></div><div style="margin-top:6px">${licenzaAttiva() ? '<span class="pro-badge">✦ PRO</span>' : provaAttiva() ? `<a class="link" data-goto="pro">✦ Prova Pro: ${giorniProva()} ${giorniProva() === 1 ? "giorno" : "giorni"}</a>` : DEMO ? "" : '<a class="link" data-goto="pro">✦ Passa a Pro</a>'}</div><div style="margin-top:6px"><a class="link" data-act="consiglia">💜 Consiglia Fondi</a></div>`;
   aggiornaSyncUI();
   const p = PAGES.find(p => p[0] === pagina);
   $("pageTitle").textContent = p[1];
@@ -1655,6 +1655,7 @@ function bind() {
       case "wrPrev": return cambiaSlide(-1);
       case "wrNext": return cambiaSlide(1);
       case "wrCondividi": return condividiWrapped();
+      case "consiglia": return consigliaFondi();
       case "pdf": if (!richiediPro("report")) return; return stampaReport(b.dataset.periodo);
       case "futReset": FUT = null; FUT = futDefault(); $("futInput").dataset.ok = ""; salvaFut(); return renderFuturo();
       case "futAdd": FUT.eventi.push({ ...PRESET[+b.dataset.i] }); salvaFut(); return renderFuturo();
@@ -2139,7 +2140,7 @@ async function condividiWrapped() {
   const blob = await new Promise(r => c.toBlob(r, "image/png"));
   const file = new File([blob], "il-mio-fondi.png", { type: "image/png" });
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
-    try { await navigator.share({ files: [file], title: "Il mio riepilogo Fondi", text: "Guarda il mio riepilogo su Fondi 👉 https://francescoraiola11-ux.github.io/fondi/" }); return; } catch (e) { if (e.name === "AbortError") return; }
+    try { await navigator.share({ files: [file], title: "Il mio riepilogo Fondi", text: "Guarda il mio riepilogo su Fondi 👉 https://francescoraiola11-ux.github.io/fondi/scopri.html?utm_source=storia" }); return; } catch (e) { if (e.name === "AbortError") return; }
   }
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = file.name; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
@@ -2169,6 +2170,14 @@ function stampaReport(periodo) {
     <h2>Conti</h2><table><tbody>${S.conti.map(c => `<tr><td>${TIPI_CONTO[c.tipo]} ${esc(c.nome)}</td><td>${esc(c.tipo)}</td><td class="r">${euro(saldiConti()[c.id])}</td></tr>`).join("")}<tr><td colspan="2"><b>Patrimonio netto</b></td><td class="r"><b>${euro(patrimonio())}</b></td></tr></tbody></table>
     <div class="pr-foot">Report generato con Fondi · francescoraiola11-ux.github.io/fondi</div>`;
   setTimeout(() => window.print(), 100);
+}
+
+async function consigliaFondi() {
+  const url = "https://francescoraiola11-ux.github.io/fondi/scopri.html?utm_source=consiglia";
+  const testo = "Uso Fondi per gestire le spese: ti dice quanto puoi spendere ogni giorno ed è gratis, senza registrazione 👉 ";
+  if (navigator.share) { try { await navigator.share({ title: "Fondi", text: testo, url }); return; } catch (e) { if (e.name === "AbortError") return; } }
+  try { await navigator.clipboard.writeText(testo + url); toast("Link copiato: incollalo dove vuoi 💜"); }
+  catch (e) { window.open("https://wa.me/?text=" + encodeURIComponent(testo + url), "_blank", "noopener"); }
 }
 
 /* ---------------- Installazione (PWA) ---------------- */

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="it"><head><meta charset="UTF-8"><title>kit</title>
+<style>
+*{box-sizing:border-box;margin:0}
+body{font-family:"Segoe UI",system-ui,sans-serif;color:#fff;background:#07060f;overflow:hidden}
+.c{position:relative;width:100vw;height:100vh;overflow:hidden;background:radial-gradient(120% 90% at 0% 0%,#4c1d95 0%,#1e1b4b 45%,#07060f 80%)}
+.c::after{content:"";position:absolute;width:70vmax;height:70vmax;right:-25vmax;bottom:-25vmax;border-radius:50%;background:radial-gradient(circle,#db277755,transparent 65%)}
+.logo{display:flex;gap:.5em;align-items:center;font-weight:800}
+.logo i{width:1.7em;height:1.7em;border-radius:.5em;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:grid;place-items:center;font-style:normal}
+h1{font-weight:900;letter-spacing:-.035em;line-height:1.02}
+h1 span{background:linear-gradient(90deg,#c4b5fd,#f9a8d4);-webkit-background-clip:text;background-clip:text;color:transparent}
+.phone{position:absolute;border-radius:6%/3%;border:.5vw solid #26233a;box-shadow:0 3vw 6vw -2vw #000;overflow:hidden;z-index:2}
+.phone img{display:block;width:100%}
+.pill{display:inline-block;padding:.35em .8em;border-radius:99px;background:#ffffff1f;font-weight:700}
+.url{font-weight:700;opacity:.85}
+.z{position:absolute;inset:0;z-index:3}
+</style></head><body>
+<div class="c" id="c"></div>
+<script>
+const f = new URLSearchParams(location.search).get("f"), c = document.getElementById("c");
+const T = {
+og: `<div class="z" style="position:absolute;left:70px;top:70px;width:640px">
+  <div class="logo" style="font-size:30px"><i>€</i>Fondi</div>
+  <h1 style="font-size:76px;margin-top:40px">Sai quanto puoi <span>spendere oggi</span>?</h1>
+  <p style="font-size:28px;opacity:.85;margin-top:24px">L'app gratuita per spese, budget e risparmi.<br>Senza registrazione. Senza pubblicità.</p></div>
+  <div class="phone" style="width:300px;right:90px;top:60px;transform:rotate(4deg)"><img src="m-panoramica.jpg"></div>`,
+p1: `<div class="z" style="padding:90px 80px">
+  <div class="logo" style="font-size:38px"><i>€</i>Fondi</div>
+  <h1 style="font-size:76px;margin-top:50px;width:540px">L'app che ti dice <span>quanto puoi spendere oggi</span></h1>
+  <p style="font-size:32px;opacity:.85;margin-top:32px;width:500px">Gratis. Niente banca da collegare. I dati restano sul tuo telefono.</p>
+  <p class="url" style="font-size:30px;position:absolute;bottom:80px">🔗 link in bio</p></div>
+  <div class="phone" style="width:400px;right:60px;top:170px;transform:rotate(5deg)"><img src="m-panoramica.jpg"></div>`,
+p2: `<div class="z" style="padding:90px 80px">
+  <span class="pill" style="font-size:30px">🔮 Il tuo futuro</span>
+  <h1 style="font-size:80px;margin-top:40px;width:540px">Quanto avrai tra <span>20 anni</span>?</h1>
+  <p style="font-size:32px;opacity:.85;margin-top:32px;width:480px">Aggiungi mutuo, auto, figli. Scopri a che età potrai smettere di lavorare.</p>
+  <div class="logo" style="font-size:34px;position:absolute;bottom:80px"><i>€</i>Fondi</div></div>
+  <div class="phone" style="width:400px;right:60px;top:150px;transform:rotate(-4deg)"><img src="m-futuro.jpg"></div>`,
+s1: `<div class="z" style="padding:150px 90px;text-align:center">
+  <div class="logo" style="font-size:44px;justify-content:center"><i>€</i>Fondi</div>
+  <h1 style="font-size:112px;margin-top:70px">Ogni mese<br>ti chiedi dove<br><span>sono finiti i soldi?</span></h1></div>
+  <div class="phone" style="width:560px;left:260px;top:880px;transform:rotate(-3deg)"><img src="m-panoramica.jpg"></div>`,
+s2: `<div class="z" style="padding:150px 90px;text-align:center">
+  <span class="pill" style="font-size:40px">🎁 Il tuo mese in Fondi</span>
+  <h1 style="font-size:104px;margin-top:60px">Che tipo di<br><span>spendaccione</span><br>sei?</h1></div>
+  <div class="phone" style="width:540px;left:270px;top:900px;transform:rotate(3deg)"><img src="m-storia-personalita.jpg"></div>`,
+};
+c.innerHTML = T[f] || "";
+</script></body></html>

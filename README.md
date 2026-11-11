@@ -2,7 +2,7 @@
 
 Gestore completo delle finanze personali. Funziona offline e i dati restano solo sul tuo dispositivo.
 Piano **gratuito** completo per l'uso di tutti i giorni + **Fondi Pro** in abbonamento (3,99 €/mese o 29,99 €/anno, prova gratuita di 7 giorni).
-**Online e installabile:** https://francescoraiola11-ux.github.io/fondi/
+**Online e installabile:** https://francescoraiola11-ux.github.io/fondi/ · Pagina di presentazione: https://francescoraiola11-ux.github.io/fondi/scopri.html · Kit di lancio: `LANCIO.md`
 (iPhone: Safari → Condividi → Aggiungi alla schermata Home · Android: Chrome → ⋮ → Installa app)
 
 In locale: apri `index.html` con il browser. Per un'anteprima con 6 mesi di dati di esempio, che non tocca i tuoi dati, apri `index.html?demo`.

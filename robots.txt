@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://francescoraiola11-ux.github.io/fondi/sitemap.xml
