@@ -402,6 +402,10 @@ tbody tr:hover td { background: var(--surface-2); }
 .danger-zone { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
 .danger-zone .hint { margin: 4px 0 0; }
 
+/* sincronizzazione */
+.steps { margin: 0 0 16px; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.sync-on { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+
 /* ============ Modal ============ */
 .overlay {
   position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 20px;

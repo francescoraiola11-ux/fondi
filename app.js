@@ -172,7 +172,237 @@ function carica() {
 let S = carica();
 let cache = {};
 const memo = (k, f) => (k in cache ? cache[k] : (cache[k] = f()));
-function salva() { cache = {}; if (!DEMO) localStorage.setItem(KEY, JSON.stringify(S)); }
+function salva() {
+  cache = {};
+  if (DEMO) return;
+  localStorage.setItem(KEY, JSON.stringify(S));
+  tracciaModifiche();
+  if (SYNC && !syncInCorso) programmaSync();
+}
+
+/* =====================================================================
+   Sincronizzazione tra dispositivi
+   - dati cifrati sul dispositivo (PBKDF2 + AES-GCM 256) e salvati in un Gist segreto
+   - unione voce per voce con data di modifica e "lapidi" per le cancellazioni
+   ===================================================================== */
+const SYNC_KEY = "fondi-sync", META_KEY = "fondi-meta", SYNC_FILE = "fondi.sync.json", SYNC_DESC = "Fondi · dati cifrati (sincronizzazione)";
+const COLLEZIONI = { conti: "id", movimenti: "id", ricorrenti: "id", obiettivi: "id", debiti: "id", categorie: "nome", regole: "parola" };
+const IMP_SYNC = ["extraDebiti"];
+let SYNC = null, META = { rec: {}, del: {}, init: false };
+try { SYNC = JSON.parse(localStorage.getItem(SYNC_KEY) || "null"); } catch (e) { }
+try { META = JSON.parse(localStorage.getItem(META_KEY) || "null") || META; } catch (e) { }
+let syncInCorso = false, syncTimer = null, syncStato = SYNC ? "attesa" : "off", saltCorrente = null, chiaviCache = {};
+
+function hashStr(s) { // cyrb53
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for (let i = 0; i < s.length; i++) { const c = s.charCodeAt(i); h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677); }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+}
+const chiaveRec = (col, r) => col + ":" + r[COLLEZIONI[col]];
+
+// Confronta lo stato con l'ultima "impronta" nota: le voci cambiate prendono la data di adesso, quelle sparite diventano lapidi.
+function tracciaModifiche() {
+  const ora = Date.now(), primo = !META.init, visti = new Set();
+  const segna = (key, valore) => {
+    visti.add(key);
+    const h = hashStr(JSON.stringify(valore)), m = META.rec[key];
+    if (!m || m.h !== h) { META.rec[key] = { h, t: primo ? 1 : ora }; delete META.del[key]; }
+  };
+  for (const col of Object.keys(COLLEZIONI)) for (const r of S[col]) segna(chiaveRec(col, r), r);
+  for (const p of IMP_SYNC) segna("imp:" + p, S.impostazioni[p]);
+  for (const key of Object.keys(META.rec)) if (!visti.has(key)) { META.del[key] = ora; delete META.rec[key]; }
+  META.init = true;
+  localStorage.setItem(META_KEY, JSON.stringify(META));
+}
+
+function unisci(R, RM) {
+  RM = RM || { rec: {}, del: {} };
+  const out = JSON.parse(JSON.stringify(S));
+  const M = { rec: { ...META.rec }, del: { ...META.del }, init: true };
+  for (const [k, t] of Object.entries(RM.del || {})) if (!(M.del[k] >= t)) M.del[k] = t;
+  for (const col of Object.keys(COLLEZIONI)) {
+    const loc = new Map(S[col].map(r => [chiaveRec(col, r), r]));
+    const rem = new Map((R[col] || []).map(r => [chiaveRec(col, r), r]));
+    const ris = [];
+    for (const key of new Set([...loc.keys(), ...rem.keys()])) {
+      const lr = loc.get(key), rr = rem.get(key);
+      const lt = lr ? (META.rec[key] || {}).t || 0 : -1, rt = rr ? ((RM.rec || {})[key] || {}).t || 0 : -1;
+      const vinceRemoto = rt > lt;
+      const win = vinceRemoto ? rr : lr, tw = Math.max(lt, rt);
+      if ((M.del[key] || 0) >= tw) { delete M.rec[key]; continue; }
+      ris.push(JSON.parse(JSON.stringify(win)));
+      M.rec[key] = vinceRemoto ? (RM.rec[key] || { h: hashStr(JSON.stringify(rr)), t: rt }) : (META.rec[key] || { h: hashStr(JSON.stringify(lr)), t: lt });
+      delete M.del[key];
+    }
+    out[col] = ris;
+  }
+  for (const p of IMP_SYNC) {
+    const key = "imp:" + p, lt = (META.rec[key] || {}).t || 0, rt = ((RM.rec || {})[key] || {}).t || 0;
+    if (rt > lt && R.impostazioni && p in R.impostazioni) { out.impostazioni[p] = R.impostazioni[p]; M.rec[key] = RM.rec[key]; }
+  }
+  out.ignorati = [...new Set([...(S.ignorati || []), ...(R.ignorati || [])])];
+  return { stato: normalizza(out), meta: M };
+}
+
+/* --- cifratura --- */
+function b64(buf) { const a = new Uint8Array(buf); let s = ""; for (let i = 0; i < a.length; i += 0x8000) s += String.fromCharCode.apply(null, a.subarray(i, i + 0x8000)); return btoa(s); }
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+async function chiaveCifra(salt) {
+  const k = SYNC.pass + "|" + salt;
+  if (chiaviCache[k]) return chiaviCache[k];
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(SYNC.pass), "PBKDF2", false, ["deriveKey"]);
+  return (chiaviCache[k] = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: unb64(salt), iterations: 310000, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]));
+}
+async function cifra(obj) {
+  if (!saltCorrente) saltCorrente = b64(crypto.getRandomValues(new Uint8Array(16)));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await chiaveCifra(saltCorrente), new TextEncoder().encode(JSON.stringify(obj)));
+  return JSON.stringify({ app: "fondi", v: 1, salt: saltCorrente, iv: b64(iv), dati: b64(ct) });
+}
+async function decifra(txt) {
+  let p;
+  try { p = JSON.parse(txt); } catch (e) { throw new Error("Il file nel cloud è danneggiato"); }
+  if (p.app !== "fondi") throw new Error("Il file nel cloud non è di Fondi");
+  let pt;
+  try { pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(p.iv) }, await chiaveCifra(p.salt), unb64(p.dati)); }
+  catch (e) { throw new Error("Password di cifratura errata"); }
+  saltCorrente = p.salt;
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+
+/* --- GitHub Gist --- */
+async function gh(path, opt = {}) {
+  const r = await fetch("https://api.github.com" + path, {
+    ...opt, cache: "no-store",
+    headers: { Authorization: "Bearer " + SYNC.token, Accept: "application/vnd.github+json", ...(opt.body ? { "Content-Type": "application/json" } : {}) },
+  });
+  if (r.status === 401) throw Object.assign(new Error("Token GitHub non valido o scaduto"), { status: 401 });
+  if (r.status === 403) throw Object.assign(new Error("Il token non ha il permesso 'gist' (o limite di richieste raggiunto)"), { status: 403 });
+  if (!r.ok) throw Object.assign(new Error("GitHub ha risposto con errore " + r.status), { status: r.status });
+  return r.status === 204 ? null : r.json();
+}
+async function leggiFile(g) {
+  const f = g.files && g.files[SYNC_FILE];
+  if (!f) return null;
+  let c = f.content;
+  if (f.truncated) c = await (await fetch(f.raw_url, { cache: "no-store" })).text();
+  return c && c.trim() !== "{}" ? c : null;
+}
+async function trovaGist() {
+  if (SYNC.gistId) {
+    try { const g = await gh("/gists/" + SYNC.gistId); return { id: g.id, contenuto: await leggiFile(g) }; }
+    catch (e) { if (e.status !== 404) throw e; SYNC.gistId = null; }
+  }
+  for (let p = 1; p <= 10; p++) {
+    const lista = await gh(`/gists?per_page=100&page=${p}`);
+    const g = lista.find(g => g.files && g.files[SYNC_FILE]);
+    if (g) { SYNC.gistId = g.id; return { id: g.id, contenuto: await leggiFile(await gh("/gists/" + g.id)) }; }
+    if (lista.length < 100) break;
+  }
+  const nuovo = await gh("/gists", { method: "POST", body: JSON.stringify({ description: SYNC_DESC, public: false, files: { [SYNC_FILE]: { content: "{}" } } }) });
+  SYNC.gistId = nuovo.id;
+  return { id: nuovo.id, contenuto: null };
+}
+
+/* --- ciclo di sincronizzazione --- */
+const salvaSync = () => (SYNC ? localStorage.setItem(SYNC_KEY, JSON.stringify(SYNC)) : localStorage.removeItem(SYNC_KEY));
+const syncDisponibile = () => !!(window.crypto && crypto.subtle) && /^https?:$/.test(location.protocol);
+function programmaSync(ms = 3000) { clearTimeout(syncTimer); syncTimer = setTimeout(() => sincronizza(), ms); }
+function setSyncStato(s) { syncStato = s; aggiornaSyncUI(); }
+
+async function sincronizza(manuale) {
+  if (!SYNC || DEMO || !syncDisponibile()) return;
+  if (syncInCorso) { programmaSync(2000); return; }
+  if (!navigator.onLine) { setSyncStato("offline"); return; }
+  syncInCorso = true; setSyncStato("sync");
+  try {
+    const prima = JSON.stringify(S);
+    const g = await trovaGist();
+    let remotoTxt = null;
+    if (g.contenuto) {
+      const remoto = await decifra(g.contenuto);
+      remotoTxt = JSON.stringify(remoto);
+      const localeVuoto = !SYNC.ultimo && !S.movimenti.length;
+      if (localeVuoto) { S = normalizza(remoto.stato); META = remoto.meta || { rec: {}, del: {} }; META.init = true; }
+      else { const u = unisci(remoto.stato, remoto.meta); S = u.stato; META = u.meta; }
+      cache = {};
+      localStorage.setItem(KEY, JSON.stringify(S));
+      tracciaModifiche();
+      eseguiRicorrenti();
+    }
+    const payload = { stato: S, meta: META };
+    if (JSON.stringify(payload) !== remotoTxt) {
+      await gh("/gists/" + g.id, { method: "PATCH", body: JSON.stringify({ files: { [SYNC_FILE]: { content: await cifra(payload) } } }) });
+    }
+    SYNC.ultimo = Date.now(); SYNC.errore = null; salvaSync();
+    setSyncStato("ok");
+    if (JSON.stringify(S) !== prima) { render(); if (!manuale) toast("Dati aggiornati dall'altro dispositivo"); }
+    if (manuale) toast("Sincronizzazione completata");
+    return true;
+  } catch (e) {
+    console.warn("sync", e);
+    if (SYNC) { SYNC.errore = e.message; salvaSync(); }
+    setSyncStato("errore");
+    if (manuale) toast("Sincronizzazione non riuscita: " + e.message);
+    return false;
+  } finally { syncInCorso = false; }
+}
+
+async function collegaSync(token, pass) {
+  if (!syncDisponibile()) return toast("La sincronizzazione funziona dalla versione online dell'app");
+  SYNC = { token: token.trim(), pass, gistId: null, ultimo: null };
+  chiaviCache = {}; saltCorrente = null;
+  setSyncStato("sync");
+  const ok = await sincronizza(false);
+  if (!ok) { const err = SYNC && SYNC.errore; SYNC = null; salvaSync(); setSyncStato("off"); toast(err || "Collegamento non riuscito"); return; }
+  render(); toast("☁️ Sincronizzazione attiva");
+}
+function scollegaSync() { SYNC = null; salvaSync(); chiaviCache = {}; saltCorrente = null; setSyncStato("off"); render(); toast("Dispositivo scollegato: i dati restano qui"); }
+
+const fmtRel = ts => {
+  if (!ts) return "mai";
+  const s = Math.round((Date.now() - ts) / 1000);
+  if (s < 45) return "adesso";
+  if (s < 3600) return `${Math.round(s / 60)} min fa`;
+  if (s < 86400) return `${Math.round(s / 3600)} ore fa`;
+  return new Date(ts).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+};
+function testoStato() {
+  if (!SYNC) return "";
+  return { sync: "⏳ Sincronizzazione…", ok: `☁️ Sincronizzato ${fmtRel(SYNC.ultimo)}`, errore: `⚠️ ${SYNC.errore || "Errore"}`, offline: "📴 Offline: sincronizzo appena torni online", attesa: `☁️ Ultima sincronizzazione ${fmtRel(SYNC.ultimo)}` }[syncStato] || "";
+}
+function aggiornaSyncUI() {
+  const el = $("syncStato");
+  if (el) { el.textContent = testoStato(); el.className = syncStato === "errore" ? "neg" : "muted"; }
+  const sc = $("syncSide");
+  if (sc) sc.textContent = SYNC ? testoStato() : "";
+}
+function renderSync() {
+  const box = $("syncBox");
+  if (!box) return;
+  if (!syncDisponibile()) {
+    box.innerHTML = `<p class="hint" style="margin:0">La sincronizzazione funziona dalla versione online: <a class="link" href="https://francescoraiola11-ux.github.io/fondi/" target="_blank" rel="noopener">francescoraiola11-ux.github.io/fondi</a></p>`;
+  } else if (!SYNC) {
+    box.innerHTML = `<p class="hint">I dati si allineano da soli tra PC e telefono. Vengono <b>cifrati sul dispositivo</b> (AES-256) con una password che conosci solo tu e salvati in un Gist segreto del tuo GitHub: senza la password nessuno può leggerli, nemmeno GitHub.</p>
+      <ol class="steps">
+        <li><a class="link" href="https://github.com/settings/tokens/new?scopes=gist&description=Fondi%20sync" target="_blank" rel="noopener">Crea un token GitHub</a> con il <b>solo</b> permesso <b>gist</b>, poi copialo.</li>
+        <li>Incollalo qui sotto e scegli una <b>password di cifratura</b>.</li>
+        <li>Sull'altro dispositivo inserisci <b>lo stesso token e la stessa password</b>: i dati arrivano da soli.</li>
+      </ol>
+      <form id="fSync" class="form-grid">
+        <label>Token GitHub<input id="sToken" type="password" autocomplete="off" required placeholder="ghp_…"></label>
+        <label>Password di cifratura<input id="sPass" type="password" minlength="8" required autocomplete="new-password" placeholder="almeno 8 caratteri"></label>
+        <button class="btn primary" type="submit">Collega questo dispositivo</button>
+      </form>
+      <p class="hint" style="margin:12px 0 0">⚠️ Se dimentichi la password, la copia nel cloud non si può recuperare (i dati sui dispositivi restano). Il token resta salvato solo su questo dispositivo.</p>`;
+  } else {
+    box.innerHTML = `<div class="sync-on"><div><b>Questo dispositivo è collegato.</b><p class="hint" style="margin:4px 0 0">Ogni modifica viene inviata in pochi secondi; all'apertura dell'app scarico quelle fatte altrove. Puoi lavorare anche offline: al ritorno della connessione unisco tutto.</p></div>
+      <div class="btn-row"><button class="btn sm primary" data-act="syncOra">Sincronizza ora</button><button class="btn sm ghost" data-act="syncScollega">Scollega</button></div></div>`;
+  }
+  aggiornaSyncUI();
+}
 
 const catInfo = nome => S.categorie.find(c => c.nome === nome) || { nome: nome || "Senza categoria", icona: "🏷️", colore: "#94a3b8", gruppo: "desideri", budget: 0 };
 const gruppoDi = nome => catInfo(nome).gruppo;
@@ -189,18 +419,24 @@ function prossimaData(r, da) {
   return `${nm}-${pad(Math.min(r.giorno || d, giorniMese(ny, nmm)))}`;
 }
 function eseguiRicorrenti() {
-  let n = 0;
+  let n = 0, avanzato = false;
+  const ids = new Set(S.movimenti.map(m => m.id));
   for (const r of S.ricorrenti) {
     let g = 0;
     while (r.prossima <= OGGI && g++ < 1000) {
-      const m = { id: uid(), tipo: r.tipo, data: r.prossima, importo: r.importo, contoId: r.contoId, descrizione: r.descrizione, ricorrenteId: r.id, tags: [] };
-      if (r.tipo === "trasferimento") m.contoDestId = r.contoDestId; else m.categoria = r.categoria;
-      S.movimenti.push(m);
+      // id deterministico: due dispositivi che generano la stessa scadenza producono lo stesso movimento (niente doppioni in sincronizzazione)
+      const id = `ric-${r.id}-${r.prossima}`;
+      if (!ids.has(id)) {
+        const m = { id, tipo: r.tipo, data: r.prossima, importo: r.importo, contoId: r.contoId, descrizione: r.descrizione, ricorrenteId: r.id, tags: [] };
+        if (r.tipo === "trasferimento") m.contoDestId = r.contoDestId; else m.categoria = r.categoria;
+        S.movimenti.push(m); ids.add(id);
+        n++;
+      }
       r.prossima = prossimaData(r, r.prossima);
-      n++;
+      avanzato = true;
     }
   }
-  if (n) salva();
+  if (avanzato) salva();
   return n;
 }
 function occorrenze(da, a) {
@@ -541,7 +777,8 @@ function renderShell() {
   const t = S.impostazioni.tema;
   $("btnTema").innerHTML = `${icon(t === "dark" ? "moon" : t === "light" ? "sun" : "auto", 19)}<span>Tema: ${t === "dark" ? "scuro" : t === "light" ? "chiaro" : "automatico"}</span>`;
   const pn = patrimonio();
-  $("sideCard").innerHTML = `<b class="money">${euro(pn)}</b>patrimonio netto · ${S.conti.length} ${S.conti.length === 1 ? "conto" : "conti"}`;
+  $("sideCard").innerHTML = `<b class="money">${euro(pn)}</b>patrimonio netto · ${S.conti.length} ${S.conti.length === 1 ? "conto" : "conti"}<div id="syncSide" style="margin-top:6px"></div>`;
+  aggiornaSyncUI();
   const p = PAGES.find(p => p[0] === pagina);
   $("pageTitle").textContent = p[1];
   $("pageSub").textContent = p[3];
@@ -924,6 +1161,7 @@ function renderImpostazioni() {
     <button class="icon-btn del" data-act="delCat" data-cat="${esc(c.nome)}" title="Elimina">${icon("trash", 15)}</button></div>`).join("");
   qsa("#temaSeg button").forEach(b => b.classList.toggle("on", b.dataset.v === S.impostazioni.tema));
   renderImport();
+  renderSync();
 }
 
 /* ---------------- Import CSV ---------------- */
@@ -1389,6 +1627,8 @@ function bind() {
         return toast(`Saldo di ${c.nome} corretto (${diff >= 0 ? "+" : ""}${euro(diff)})`, true);
       }
       case "delRegola": S.regole.splice(+b.dataset.i, 1); salva(); return render();
+      case "syncOra": return sincronizza(true);
+      case "syncScollega": return scollegaSync();
       case "impAnnulla": IMP = null; return renderImport();
       case "impConferma": {
         const nuove = analizzaImport().filter(x => !x.dup).map(x => ({ id: uid(), ...x.m }));
@@ -1493,6 +1733,21 @@ window.addEventListener("appinstalled", () => { promptInstalla = null; aggiornaI
 if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register("sw.js").catch(e => console.warn("SW", e));
 
 /* ---------------- Avvio ---------------- */
+document.addEventListener("submit", e => {
+  if (e.target.id !== "fSync") return;
+  e.preventDefault();
+  const token = $("sToken").value.trim(), pass = $("sPass").value;
+  if (pass.length < 8) return toast("La password deve avere almeno 8 caratteri");
+  e.target.querySelector("button").disabled = true;
+  collegaSync(token, pass);
+});
+if (!DEMO && !META.init) tracciaModifiche();
+if (!DEMO) {
+  if (SYNC) setTimeout(() => sincronizza(), 600);
+  document.addEventListener("visibilitychange", () => { if (!SYNC) return; if (document.visibilityState === "visible") sincronizza(); else if (syncTimer) { clearTimeout(syncTimer); sincronizza(); } });
+  window.addEventListener("online", () => sincronizza());
+  setInterval(() => { if (SYNC && document.visibilityState === "visible") sincronizza(); }, 120000);
+}
 $("btnInstalla").onclick = installa;
 $("btnInstalla2").onclick = installa;
 bind();
