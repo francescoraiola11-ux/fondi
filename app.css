@@ -667,3 +667,25 @@ body.privacy .money:hover { filter: none; }
 .confetti i { position: absolute; top: -20px; border-radius: 2px; animation: confetti linear forwards; }
 @keyframes confetti { to { transform: translate3d(0, 110vh, 0) rotate(var(--r)); opacity: .7; } }
 
+
+/* ============ Account ============ */
+.acc-modal { width: min(420px, 100%); position: relative; padding: 28px; }
+.acc-head { text-align: center; margin-bottom: 18px; }
+.acc-head .logo-mark { margin: 0 auto 12px; }
+.acc-head h2 { margin: 0 0 4px; font-size: 21px; letter-spacing: -.02em; }
+.acc-head p { margin: 0; font-size: 13px; }
+.acc-google { width: 100%; justify-content: center; gap: 10px; padding: 11px; font-weight: 600; }
+.acc-or { display: flex; align-items: center; gap: 10px; margin: 16px 0; color: var(--faint); font-size: 12px; }
+.acc-or::before, .acc-or::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.acc-form { display: grid; gap: 12px; }
+.acc-form .btn.primary { justify-content: center; padding: 11px; margin-top: 4px; }
+.acc-links { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 14px; font-size: 13px; color: var(--muted); }
+.acc-links:has(> :only-child) { justify-content: center; }
+.acc-privacy { margin: 18px 0 0; font-size: 12px; color: var(--muted); text-align: center; }
+.acc-user { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.acc-user .flex { flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 2px; }
+.acc-av { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; object-fit: cover; flex: none;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; font-weight: 800; font-size: 18px; }
+.acc-more { margin-top: 14px; }
+.acc-more summary { cursor: pointer; }
+.acc-modal .pw-close, .acc-modal .pw-close:hover { color: var(--muted); background: var(--surface-2); }

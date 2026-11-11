@@ -1,6 +1,6 @@
 /* Service worker di Fondi: rende l'app disponibile offline. */
-const VERSIONE = "fondi-v4";
-const FILE = ["./", "./index.html", "./app.css", "./app.js", "./manifest.webmanifest",
+const VERSIONE = "fondi-v5";
+const FILE = ["./", "./index.html", "./app.css", "./app.js", "./account.js", "./firebase-config.js", "./manifest.webmanifest",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/maskable-512.png", "./icons/apple-touch-icon.png"];
 
 self.addEventListener("install", e => {

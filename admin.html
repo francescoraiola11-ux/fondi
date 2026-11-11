@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Fondi · Pannello amministratore</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='28' fill='%236366f1'/><text x='50' y='68' font-size='54' font-family='Segoe UI,sans-serif' font-weight='800' text-anchor='middle' fill='white'>€</text></svg>">
+<link rel="stylesheet" href="app.css">
+<style>
+  body { min-height: 100vh; }
+  .adm { max-width: 1180px; margin: 0 auto; padding: 28px 20px 60px; }
+  .adm-top { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 24px; }
+  .adm-top h1 { margin: 0; font-size: 22px; letter-spacing: -.02em; }
+  .adm-top .flex { min-width: 160px; }
+  .adm a.btn { text-decoration: none; }
+  .adm-box { max-width: 420px; margin: 8vh auto 0; }
+  .adm-tools { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .adm-tools input { flex: 1; min-width: 200px; }
+  .adm table td, .adm table th { padding: 10px 8px; vertical-align: middle; }
+  .adm table th { text-align: left; }
+  .adm .who b { display: block; }
+  .adm .who span { color: var(--muted); font-size: 12px; }
+  .st { display: inline-block; padding: 2px 9px; border-radius: 99px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .st.paga { background: rgba(16, 185, 129, .15); color: #059669; }
+  .st.regalo { background: rgba(236, 72, 153, .14); color: #db2777; }
+  .st.prova { background: var(--accent-soft); color: var(--accent); }
+  .st.free { background: var(--surface-2); color: var(--muted); }
+  .st.ko { background: rgba(239, 68, 68, .12); color: #dc2626; }
+  .adm select.sm { padding: 5px 8px; font-size: 12px; border-radius: 9px; }
+  .chart-bars { display: flex; align-items: flex-end; gap: 8px; height: 150px; padding-top: 10px; }
+  .chart-bars div { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; height: 100%; font-size: 11px; color: var(--muted); }
+  .chart-bars i { display: block; width: 100%; max-width: 38px; border-radius: 8px 8px 3px 3px; background: linear-gradient(180deg, var(--accent-2), var(--accent)); min-height: 2px; }
+  .chart-bars b { color: var(--text); font-size: 12px; }
+  code.uid { display: block; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); font-size: 13px; word-break: break-all; margin: 8px 0 12px; }
+  .adm ol { padding-left: 20px; line-height: 1.7; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="adm" id="adm"><p class="muted" style="text-align:center;margin-top:20vh">Caricamento…</p></div>
+<div id="toast"></div>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>

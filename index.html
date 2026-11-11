@@ -290,6 +290,10 @@
       <!-- ============ IMPOSTAZIONI ============ -->
       <section class="page" data-page="impostazioni" hidden>
         <div class="grid">
+          <div class="card span-12" id="cardAccount" hidden>
+            <div class="card-head"><h2>👤 Account</h2><span id="accStato" class="muted"></span></div>
+            <div id="accBox"></div>
+          </div>
           <div class="card span-12">
             <div class="card-head"><h2>📥 Importa l'estratto conto (CSV)</h2></div>
             <p class="hint">Scarica i movimenti in CSV dall'home banking e trascina qui il file. Riconosco colonne, date e importi in formato italiano, assegno le categorie e salto i duplicati.</p>
@@ -344,7 +348,7 @@
           <div class="card span-4">
             <div class="card-head"><h2>Aspetto</h2></div>
             <div class="seg" id="temaSeg"><button data-v="auto">Automatico</button><button data-v="light">Chiaro</button><button data-v="dark">Scuro</button></div>
-            <p class="hint" style="margin:14px 0 0">🔒 Nessun dato lascia il tuo computer: niente server, niente account, niente tracciamento.</p>
+            <p class="hint" style="margin:14px 0 0">🔒 I tuoi movimenti non lasciano mai il dispositivo, niente tracciamento. L'account è facoltativo e conserva solo email, nome e stato dell'abbonamento.</p>
           </div>
           <div class="card span-4">
             <div class="card-head"><h2>Scorciatoie da tastiera</h2></div>
@@ -427,6 +431,8 @@
 <div id="stampa"></div>
 
 <div id="toast"></div>
+<script src="firebase-config.js"></script>
 <script src="app.js"></script>
+<script src="account.js"></script>
 </body>
 </html>

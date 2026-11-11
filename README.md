@@ -11,6 +11,8 @@ In locale: apri `index.html` con il browser. Per un'anteprima con 6 mesi di dati
 - `index.html`: struttura delle pagine
 - `app.css`: grafica (tema chiaro e scuro, versione per telefono)
 - `app.js`: tutta la logica
+- `account.js`: account (Google, email) e Pro legato all'account · `firebase-config.js`: chiavi Firebase
+- `admin.html` + `admin.js`: pannello amministratore · `firestore.rules`: regole di sicurezza · configurazione in `ACCOUNT.md`
 
 ## Funzioni
 | Area | Cosa fa |
@@ -27,7 +29,8 @@ In locale: apri `index.html` con il browser. Per un'anteprima con 6 mesi di dati
 | **Report annuale** | Mese per mese, categorie, confronto con l'anno precedente |
 | **Consigli** | Budget sforati, categorie in crescita, fondo di emergenza, regola 50/30/20 |
 | **Conti** | Più conti, trasferimenti, patrimonio netto, correzione del saldo |
-| **Privacy** | Tasto per nascondere gli importi (P), nessun server |
+| **Account** | Accesso con Google o email: il Pro segue l'utente su tutti i dispositivi (facoltativo) |
+| **Privacy** | Tasto per nascondere gli importi (P), i movimenti non lasciano il dispositivo |
 | **Annulla** | Ogni modifica importante si può annullare dalla notifica |
 
 ## Gratis e Pro

@@ -779,7 +779,7 @@ function renderShell() {
   const t = S.impostazioni.tema;
   $("btnTema").innerHTML = `${icon(t === "dark" ? "moon" : t === "light" ? "sun" : "auto", 19)}<span>Tema: ${t === "dark" ? "scuro" : t === "light" ? "chiaro" : "automatico"}</span>`;
   const pn = patrimonio();
-  $("sideCard").innerHTML = `<b class="money">${euro(pn)}</b>patrimonio netto · ${S.conti.length} ${S.conti.length === 1 ? "conto" : "conti"}<div id="syncSide" style="margin-top:6px"></div><div style="margin-top:6px">${licenzaAttiva() ? '<span class="pro-badge">✦ PRO</span>' : provaAttiva() ? `<a class="link" data-goto="pro">✦ Prova Pro: ${giorniProva()} ${giorniProva() === 1 ? "giorno" : "giorni"}</a>` : DEMO ? "" : '<a class="link" data-goto="pro">✦ Passa a Pro</a>'}</div><div style="margin-top:6px"><a class="link" data-act="consiglia">💜 Consiglia Fondi</a></div>`;
+  $("sideCard").innerHTML = `<b class="money">${euro(pn)}</b>patrimonio netto · ${S.conti.length} ${S.conti.length === 1 ? "conto" : "conti"}<div id="syncSide" style="margin-top:6px"></div><div id="accSide" style="margin-top:6px"></div><div style="margin-top:6px">${proPagato() ? '<span class="pro-badge">✦ PRO</span>' : provaAttiva() ? `<a class="link" data-goto="pro">✦ Prova Pro: ${giorniProva()} ${giorniProva() === 1 ? "giorno" : "giorni"}</a>` : DEMO ? "" : '<a class="link" data-goto="pro">✦ Passa a Pro</a>'}</div><div style="margin-top:6px"><a class="link" data-act="consiglia">💜 Consiglia Fondi</a></div>`;
   aggiornaSyncUI();
   const p = PAGES.find(p => p[0] === pagina);
   $("pageTitle").textContent = p[1];
@@ -1273,6 +1273,7 @@ function render() {
     renderShell();
     aggiornaSelect();
     RENDER[pagina]();
+    if (window.renderAccount) renderAccount();
   } catch (e) { mostraErrore(e); }
 }
 function vaiA(p) {
@@ -1776,7 +1777,10 @@ const salvaLic = () => { if (!DEMO) localStorage.setItem(PRO_KEY, JSON.stringify
 const provaAttiva = () => !!LIC.provaInizio && Date.now() - LIC.provaInizio < PRO.giorniProva * GIORNO;
 const giorniProva = () => Math.max(0, Math.ceil((LIC.provaInizio + PRO.giorniProva * GIORNO - Date.now()) / GIORNO));
 const licenzaAttiva = () => !!(LIC.key && LIC.ok && Date.now() - (LIC.verificata || 0) < 14 * GIORNO && (!LIC.scade || LIC.scade > Date.now()));
-const isPro = () => (DEMO ? !PARAMS.has("free") : licenzaAttiva() || provaAttiva());
+// Pro regalato dall'amministratore (arriva dall'account; resta valido offline per 14 giorni dall'ultimo controllo)
+const regaloAttivo = () => !!(LIC.regalo && Date.now() - (LIC.regalo.visto || 0) < 14 * GIORNO && (!LIC.regalo.fino || LIC.regalo.fino > Date.now()));
+const proPagato = () => licenzaAttiva() || regaloAttivo();
+const isPro = () => (DEMO ? !PARAMS.has("free") : proPagato() || provaAttiva());
 const e0 = n => Math.round(n).toLocaleString("it-IT") + " €";
 const fmtEuro0 = n => n.toLocaleString("it-IT", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
 
@@ -1823,6 +1827,7 @@ async function attivaLicenza(key) {
     if (!r.ok) return toast(r.motivo);
     LIC = { ...LIC, key, ok: true, verificata: Date.now(), email: r.email || "", scade: r.scade || null, motivo: null };
     salvaLic(); chiudiPaywall(); render(); festeggia();
+    if (window.accSalvaPro) accSalvaPro();
     toast("Benvenuto in Fondi Pro ✦");
   } catch (e) { toast("Non riesco a verificare la licenza: controlla la connessione"); }
 }
@@ -1833,11 +1838,13 @@ async function ricontrollaLicenza() {
     if (r.ok) Object.assign(LIC, { ok: true, verificata: Date.now(), scade: r.scade || null, motivo: null });
     else Object.assign(LIC, { ok: false, motivo: r.motivo });
     salvaLic(); render();
+    if (window.accSalvaPro) accSalvaPro();
   } catch (e) { /* offline: resta valida fino a 14 giorni dall'ultima verifica */ }
 }
 function iniziaProva() {
   if (LIC.provaInizio) return toast("Hai già usato la prova gratuita");
   LIC.provaInizio = Date.now(); salvaLic(); chiudiPaywall(); render(); festeggia();
+  if (window.accSalvaPro) accSalvaPro();
   toast(`Fondi Pro attivo per ${PRO.giorniProva} giorni ✦`);
 }
 
@@ -1906,7 +1913,9 @@ function festeggia() {
 function renderPro() {
   let stato;
   if (licenzaAttiva()) stato = `<span class="pro-badge">✓ PRO ATTIVO</span><h2>Grazie per sostenere Fondi 💜</h2><p>Licenza attiva${LIC.email ? ` per <b>${esc(LIC.email)}</b>` : ""}${LIC.scade ? ` · termina il ${new Date(LIC.scade).toLocaleDateString("it-IT")}` : ""}.</p>
-      <div class="btn-row"><a class="btn" href="${PRO.gestisci}" target="_blank" rel="noopener">Gestisci abbonamento</a><button class="btn ghost" style="color:#fff;border-color:rgba(255,255,255,.4)" data-act="proRimuovi">Rimuovi licenza da questo dispositivo</button></div>`;
+      <div class="btn-row"><a class="btn" href="${PRO.gestisci}" target="_blank" rel="noopener">Gestisci abbonamento</a>${LIC.account ? "" : `<button class="btn ghost" style="color:#fff;border-color:rgba(255,255,255,.4)" data-act="proRimuovi">Rimuovi licenza da questo dispositivo</button>`}</div>
+      ${LIC.account ? `<p style="margin:14px 0 0">🔗 Collegato al tuo account: accedi con lo stesso account sugli altri dispositivi.</p>` : ""}`;
+  else if (regaloAttivo()) stato = `<span class="pro-badge">🎁 PRO IN REGALO</span><h2>Fondi Pro è attivo sul tuo account 💜</h2><p>${LIC.regalo.fino ? `Valido fino al <b>${new Date(LIC.regalo.fino).toLocaleDateString("it-IT")}</b>.` : "Senza scadenza."} Accedi con lo stesso account sugli altri dispositivi per averlo anche lì.</p>`;
   else if (provaAttiva()) stato = `<span class="pro-badge">✦ PROVA ATTIVA</span><h2>Ti restano ${giorniProva()} ${giorniProva() === 1 ? "giorno" : "giorni"} di Pro</h2><p>Abbonati ora per non perdere previsioni, simulatore e tutte le funzioni Pro.</p>
       <div class="btn-row"><button class="btn" data-act="paywall">Scegli il tuo piano</button></div>`;
   else stato = `<span class="pro-badge">✦ FONDI PRO</span><h2>Il futuro dei tuoi soldi,<br>finalmente visibile.</h2><p>Previsioni, simulazioni a 40 anni, caccia agli abbonamenti, piano anti-debiti e molto altro. Da ${fmtEuro0(PRO.prezzoAnnuale / 12)} al mese.</p>
@@ -1924,8 +1933,8 @@ function renderPro() {
       <div class="card span-5"><div class="card-head"><h2>Domande frequenti</h2></div>
         <p><b>Come disdico?</b><br><span class="muted">In un clic dalla pagina di gestione dell'abbonamento. Nessun vincolo.</span></p>
         <p><b>Che fine fanno i miei dati se smetto?</b><br><span class="muted">Restano tutti tuoi, sul tuo dispositivo. Si bloccano solo le funzioni Pro.</span></p>
-        <p><b>I miei dati finiscono su un server?</b><br><span class="muted">No. Fondi funziona sul tuo dispositivo; la sincronizzazione è cifrata con una password che conosci solo tu.</span></p>
-        <p style="margin-bottom:0"><b>Come attivo Pro su un altro dispositivo?</b><br><span class="muted">Inserisci la stessa chiave di licenza che hai ricevuto via email.</span></p></div>
+        <p><b>I miei dati finiscono su un server?</b><br><span class="muted">No. I tuoi movimenti restano sul tuo dispositivo. Se crei un account salviamo solo email, nome e stato dell'abbonamento; la sincronizzazione è cifrata con una password che conosci solo tu.</span></p>
+        <p style="margin-bottom:0"><b>Come attivo Pro su un altro dispositivo?</b><br><span class="muted">Accedi con lo stesso account (Impostazioni → Account): il Pro ti segue su ogni dispositivo. In alternativa inserisci la chiave di licenza ricevuta via email.</span></p></div>
     </div>`;
 }
 

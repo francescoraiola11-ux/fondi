@@ -1,0 +1,30 @@
+rules_version = '2';
+// Regole di sicurezza di Fondi.
+// Da incollare in: Console Firebase → Firestore Database → Regole → Pubblica.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function loggato() { return request.auth != null; }
+    // Sei amministratore se esiste il documento admin/<tuo UID> (lo crei a mano dalla console).
+    function isAdmin() { return loggato() && exists(/databases/$(database)/documents/admin/$(request.auth.uid)); }
+    // Campi che l'utente non può toccare da solo
+    function campiProtetti() { return ['proRegalo', 'creato']; }
+
+    // Un documento per utente: email, nome, ultimo accesso, licenza, prova, Pro regalato
+    match /utenti/{uid} {
+      allow read: if (loggato() && request.auth.uid == uid) || isAdmin();
+      allow create: if loggato() && request.auth.uid == uid
+                    && !('proRegalo' in request.resource.data);
+      allow update: if isAdmin()
+                    || (loggato() && request.auth.uid == uid
+                        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(campiProtetti()));
+      allow delete: if (loggato() && request.auth.uid == uid) || isAdmin();
+    }
+
+    // Elenco degli amministratori: si modifica solo dalla console Firebase
+    match /admin/{uid} {
+      allow read: if loggato() && request.auth.uid == uid;
+      allow write: if false;
+    }
+  }
+}
